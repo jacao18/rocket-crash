@@ -204,7 +204,7 @@
   <p class="subtitle">ETH · DEMO MODE</p>
 
   <div class="balance-bar">
-    <span class="label">SALDO</span>
+    <span class="label">BALANCE</span>
     <span class="amount" id="balanceDisplay">0.5000 <span>ETH</span></span>
     <span id="profitTag" class="profit-tag profit-pos" style="opacity:0">+0.000 ETH</span>
   </div>
@@ -214,15 +214,15 @@
 
     <div class="multiplier-display state-idle" id="multDisplay">
       <div class="value" id="multValue">1.00x</div>
-      <div class="label" id="multLabel">AGUARDANDO</div>
+      <div class="label" id="multLabel">WAITING</div>
     </div>
 
     <div class="crash-banner" id="crashBanner">
-      <div class="big">💥 FOGUETE EXPLODIU!</div>
+      <div class="big">💥 ROCKET CRASHED!</div>
       <div class="small" id="crashMsg"></div>
     </div>
     <div class="cash-banner" id="cashBanner">
-      <div class="big">✅ SACADO!</div>
+      <div class="big">✅ CASHED OUT!</div>
       <div class="small" id="cashMsg"></div>
     </div>
   </div>
@@ -230,17 +230,17 @@
   <div class="panel">
     <div class="panel-row">
       <div class="field">
-        <label>APOSTA (ETH)</label>
+        <label>BET AMOUNT (ETH)</label>
         <input type="range" id="betSlider" min="1" max="10" value="1" step="1" />
         <span class="val-display" id="betDisplay">0.001 ETH</span>
       </div>
-      <button class="btn btn-bet"     id="btnBet"     onclick="startBet()">🚀 APOSTAR</button>
-      <button class="btn btn-cashout" id="btnCashout" disabled onclick="cashOut()">💰 SACAR</button>
+      <button class="btn btn-bet"     id="btnBet"     onclick="startBet()">🚀 BET</button>
+      <button class="btn btn-cashout" id="btnCashout" disabled onclick="cashOut()">💰 CASH OUT</button>
     </div>
   </div>
 
   <div class="history-wrap">
-    <div class="history-title">ÚLTIMAS RODADAS</div>
+    <div class="history-title">LAST ROUNDS</div>
     <div class="history-list" id="historyList"></div>
   </div>
 
@@ -534,7 +534,7 @@ function triggerCrash() {
   updateMultDisplay(currentMult, 'crashed');
   document.getElementById('crashBanner').classList.add('show');
   document.getElementById('crashMsg').textContent =
-    `Explodiu em ${currentMult.toFixed(2)}x`;
+    `Crashed at ${currentMult.toFixed(2)}x`;
 
   // Animate explosion for a moment, then freeze
   let explosionFrames = 0;
@@ -591,7 +591,7 @@ function cashOut() {
 // ═══════════════════════════════════════════════════════════
 function startBet() {
   if (gameState !== 'idle') return;
-  if (balance < betAmount) { alert('Saldo insuficiente!'); return; }
+  if (balance < betAmount) { alert('Insufficient balance!'); return; }
 
   // Draw secret crash point — player has no visual hint
   targetMult = drawCrashPoint();
@@ -659,7 +659,7 @@ function updateMultDisplay(mult, state) {
   wrap.className = 'multiplier-display state-' + state;
   value.textContent = mult.toFixed(2) + 'x';
 
-  const labels = { idle:'AGUARDANDO', flying: betActive ? 'VOANDO — SAQUE AGORA!' : 'VOANDO', crashed:'EXPLODIU!', cashed:'SACADO COM SUCESSO' };
+  const labels = { idle:'WAITING', flying: betActive ? 'FLYING — CASH OUT NOW!' : 'FLYING', crashed:'CRASHED!', cashed:'CASHED OUT' };
   label.textContent = labels[state] || '';
 }
 
