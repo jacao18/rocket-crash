@@ -449,33 +449,119 @@ function draw() {
 function drawRocket(x, y, exploded) {
   if (exploded) return;
 
-  const wobble = Math.sin(Date.now() / 200) * 0.06;
-  const size   = 36;
+  const wobble = Math.sin(Date.now() / 200) * 0.05;
 
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(wobble);
 
-  // Outer glow
-  const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, 52);
-  glow.addColorStop(0, 'rgba(255,255,255,0.18)');
-  glow.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = glow;
+  // ── Outer engine glow ──
+  const engineGlow = ctx.createRadialGradient(0, 38, 0, 0, 38, 34);
+  engineGlow.addColorStop(0, 'rgba(34,211,238,0.55)');
+  engineGlow.addColorStop(1, 'rgba(34,211,238,0)');
+  ctx.fillStyle = engineGlow;
   ctx.beginPath();
-  ctx.arc(0, 0, 52, 0, Math.PI * 2);
+  ctx.arc(0, 38, 34, 0, Math.PI * 2);
   ctx.fill();
 
-  // Draw the 8-pointed star / diamond ring logo
-  drawStarLogo(0, 0, size);
+  // ── Body (fuselage) ──
+  ctx.beginPath();
+  ctx.moveTo(0, -52);         // nose tip
+  ctx.bezierCurveTo(14, -30, 16, -10, 16, 10);  // right side
+  ctx.lineTo(16, 32);
+  ctx.lineTo(-16, 32);
+  ctx.lineTo(-16, 10);
+  ctx.bezierCurveTo(-16, -10, -14, -30, 0, -52); // left side
+  ctx.closePath();
+  const bodyGrad = ctx.createLinearGradient(-16, 0, 16, 0);
+  bodyGrad.addColorStop(0,   '#1e293b');
+  bodyGrad.addColorStop(0.4, '#334155');
+  bodyGrad.addColorStop(1,   '#1e293b');
+  ctx.fillStyle = bodyGrad;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(148,163,184,0.3)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // ── Nose cone highlight ──
+  ctx.beginPath();
+  ctx.moveTo(0, -52);
+  ctx.bezierCurveTo(6, -38, 7, -20, 6, -4);
+  ctx.bezierCurveTo(3, -8, 1, -30, 0, -52);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(255,255,255,0.08)';
+  ctx.fill();
+
+  // ── Left fin ──
+  ctx.beginPath();
+  ctx.moveTo(-16, 18);
+  ctx.lineTo(-34, 40);
+  ctx.lineTo(-28, 40);
+  ctx.lineTo(-16, 32);
+  ctx.closePath();
+  const finGradL = ctx.createLinearGradient(-34, 30, -16, 30);
+  finGradL.addColorStop(0, '#0f172a');
+  finGradL.addColorStop(1, '#1e293b');
+  ctx.fillStyle = finGradL;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(148,163,184,0.2)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // ── Right fin ──
+  ctx.beginPath();
+  ctx.moveTo(16, 18);
+  ctx.lineTo(34, 40);
+  ctx.lineTo(28, 40);
+  ctx.lineTo(16, 32);
+  ctx.closePath();
+  const finGradR = ctx.createLinearGradient(16, 30, 34, 30);
+  finGradR.addColorStop(0, '#1e293b');
+  finGradR.addColorStop(1, '#0f172a');
+  ctx.fillStyle = finGradR;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(148,163,184,0.2)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // ── Engine nozzle ──
+  ctx.beginPath();
+  ctx.moveTo(-10, 32);
+  ctx.lineTo(-13, 44);
+  ctx.lineTo(13, 44);
+  ctx.lineTo(10, 32);
+  ctx.closePath();
+  ctx.fillStyle = '#0f172a';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(148,163,184,0.25)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // ── Engine flame ──
+  const flicker = 0.85 + Math.random() * 0.3;
+  const flameGrad = ctx.createLinearGradient(0, 44, 0, 44 + 28 * flicker);
+  flameGrad.addColorStop(0,   'rgba(255,255,255,0.95)');
+  flameGrad.addColorStop(0.2, 'rgba(34,211,238,0.9)');
+  flameGrad.addColorStop(0.6, 'rgba(99,102,241,0.6)');
+  flameGrad.addColorStop(1,   'rgba(99,102,241,0)');
+  ctx.beginPath();
+  ctx.moveTo(-9, 44);
+  ctx.quadraticCurveTo(-5 + Math.random()*4, 44 + 18 * flicker, 0, 44 + 28 * flicker);
+  ctx.quadraticCurveTo(5 + Math.random()*4,  44 + 18 * flicker, 9, 44);
+  ctx.closePath();
+  ctx.fillStyle = flameGrad;
+  ctx.fill();
+
+  // ── Logo (8-square ring) stamped on fuselage ──
+  drawStarLogo(0, -8, 13);
 
   ctx.restore();
 }
 
 function drawStarLogo(cx, cy, s) {
-  // 8 squares arranged in a ring, alternating axis-aligned and 45°-rotated
   const count  = 8;
-  const radius = s * 0.72;
-  const sq     = s * 0.38;
+  const radius = s * 0.78;
+  const sq     = s * 0.40;
 
   for (let i = 0; i < count; i++) {
     const angle  = (i / count) * Math.PI * 2 - Math.PI / 2;
@@ -486,14 +572,11 @@ function drawStarLogo(cx, cy, s) {
     ctx.save();
     ctx.translate(px, py);
     ctx.rotate(angle + rotate);
-
-    // White square with slight glow
-    ctx.shadowColor = 'rgba(255,255,255,0.9)';
-    ctx.shadowBlur  = 8;
-    ctx.fillStyle   = '#ffffff';
+    ctx.shadowColor = 'rgba(255,255,255,0.7)';
+    ctx.shadowBlur  = 4;
+    ctx.fillStyle   = 'rgba(255,255,255,0.92)';
     ctx.fillRect(-sq / 2, -sq / 2, sq, sq);
     ctx.shadowBlur  = 0;
-
     ctx.restore();
   }
 }
@@ -658,7 +741,7 @@ function drawCrashPoint() {
 // ═══════════════════════════════════════════════════════════
 function resetIdle() {
   gameState   = 'idle';
-  currentMult = 1.0;
+  currentMult = 0.8;
   targetMult  = 1;
   startTime   = null;
   particles   = [];
