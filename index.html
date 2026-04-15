@@ -52,7 +52,7 @@
       height: 320px;
     }
 
-    /* Multiplier overlay — center of canvas */
+    /* Multiplier overlay — repositions based on game state */
     .multiplier-display {
       position: absolute;
       top: 50%;
@@ -60,6 +60,10 @@
       transform: translate(-50%, -50%);
       text-align: center;
       pointer-events: none;
+      transition: top 0.4s ease;
+    }
+    .multiplier-display.state-idle {
+      top: 78%;
     }
     .multiplier-display .value {
       font-size: 4.5rem;
