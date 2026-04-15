@@ -352,6 +352,19 @@ export default function App() {
   }
 
   // ─────────────────────────────────────────────────────────
+  //  DEPOSIT MODAL STATE
+  // ─────────────────────────────────────────────────────────
+  const [showDeposit, setShowDeposit] = useState(false)
+  const [copied, setCopied]           = useState(false)
+
+  function copyAddress() {
+    if (!address) return
+    navigator.clipboard.writeText(address)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  // ─────────────────────────────────────────────────────────
   //  RENDER
   // ─────────────────────────────────────────────────────────
   const balEth   = balanceData ? parseFloat(formatEther(balanceData.value)).toFixed(4) : '—'
@@ -363,31 +376,76 @@ export default function App() {
 
   return (
     <>
-      <h1 style={styles.h1}>🚀 ROCKET <span style={{ color: '#f97316' }}>CRASH</span></h1>
-      <p style={styles.subtitle}>SONEIUM MINATO TESTNET</p>
+      {/* ── TOP BAR ── */}
+      <div style={styles.topBar}>
+        <div style={styles.topLeft}>
+          <h1 style={styles.h1}>🚀 ROCKET <span style={{ color: '#f97316' }}>CRASH</span></h1>
+          <p style={styles.subtitle}>SONEIUM MINATO TESTNET</p>
+        </div>
 
-      {/* Balance / Auth bar */}
-      <div style={styles.balanceBar}>
-        <span style={styles.label}>BALANCE</span>
-        {authenticated ? (
-          <>
-            <span style={styles.amount}>{balEth} <span style={{ color: '#818cf8', fontSize: '0.75rem' }}>ETH</span></span>
-            <span style={{ ...styles.profitTag, ...(profit >= 0 ? styles.profitPos : styles.profitNeg), opacity: profit !== 0 ? 1 : 0 }}>
-              {profit >= 0 ? '+' : ''}{profit.toFixed(4)} ETH
-            </span>
-            <button onClick={logout} style={styles.btnSmall}>Logout</button>
-          </>
-        ) : (
-          <button onClick={login} style={styles.btnLogin}>Sign in with Google</button>
-        )}
+        {/* Wallet widget — top right */}
+        <div style={styles.walletWidget}>
+          {authenticated && address ? (
+            <>
+              <div style={styles.walletInfo}>
+                <span style={styles.walletBal}>{balEth} <span style={{ color: '#818cf8', fontSize: '0.7rem' }}>ETH</span></span>
+                <span style={styles.walletAddr2}>{address.slice(0, 6)}…{address.slice(-4)}</span>
+              </div>
+              <button onClick={() => setShowDeposit(true)} style={styles.btnDeposit}>+ Deposit</button>
+              <button onClick={logout} style={styles.btnSmall}>Logout</button>
+            </>
+          ) : (
+            <button onClick={login} style={styles.btnLogin}>Sign in with Google</button>
+          )}
+        </div>
       </div>
 
-      {/* Wallet address */}
-      {address && (
-        <div style={styles.walletRow}>
-          <span style={styles.walletAddr}>{address.slice(0, 6)}…{address.slice(-4)}</span>
-          <a href={`https://explorer-testnet.soneium.org/address/${address}`} target="_blank" rel="noreferrer" style={styles.explorerLink}>View on Explorer ↗</a>
-          <a href="https://faucets.chain.link/soneium-minato" target="_blank" rel="noreferrer" style={styles.faucetLink}>Get Testnet ETH 🚰</a>
+      {/* ── DEPOSIT MODAL ── */}
+      {showDeposit && address && (
+        <div style={styles.modalOverlay} onClick={() => setShowDeposit(false)}>
+          <div style={styles.modalBox} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <span style={styles.modalTitle}>Deposit ETH</span>
+              <button onClick={() => setShowDeposit(false)} style={styles.modalClose}>✕</button>
+            </div>
+
+            <p style={styles.modalSubtitle}>Send ETH from any wallet to your game address on <b style={{ color: '#f97316' }}>Soneium Minato</b> testnet:</p>
+
+            {/* Address box */}
+            <div style={styles.addrBox}>
+              <span style={styles.addrText}>{address}</span>
+              <button onClick={copyAddress} style={styles.btnCopy}>
+                {copied ? '✓ Copied!' : 'Copy'}
+              </button>
+            </div>
+
+            <div style={styles.modalSteps}>
+              <div style={styles.modalStep}>
+                <span style={styles.stepNum}>1</span>
+                <span>Get testnet ETH from the <a href="https://faucets.chain.link/soneium-minato" target="_blank" rel="noreferrer" style={styles.modalLink}>Chainlink Faucet 🚰</a></span>
+              </div>
+              <div style={styles.modalStep}>
+                <span style={styles.stepNum}>2</span>
+                <span>Copy the address above and paste in your MetaMask or any wallet</span>
+              </div>
+              <div style={styles.modalStep}>
+                <span style={styles.stepNum}>3</span>
+                <span>Make sure you're on the <b style={{ color: '#f97316' }}>Soneium Minato (Chain ID: 1946)</b> network</span>
+              </div>
+              <div style={styles.modalStep}>
+                <span style={styles.stepNum}>4</span>
+                <span>Send ETH — your balance will update automatically</span>
+              </div>
+            </div>
+
+            <a
+              href={`https://explorer-testnet.soneium.org/address/${address}`}
+              target="_blank" rel="noreferrer"
+              style={styles.explorerBtn}
+            >
+              View on Explorer ↗
+            </a>
+          </div>
         </div>
       )}
 
@@ -478,20 +536,45 @@ export default function App() {
 //  STYLES
 // ─────────────────────────────────────────────────────────
 const styles = {
-  h1:          { fontSize: '1.8rem', fontWeight: 800, letterSpacing: 2, color: '#fff', marginBottom: 4 },
-  subtitle:    { fontSize: '0.78rem', color: '#6b7db3', marginBottom: 24, letterSpacing: 1 },
-  balanceBar:  { width: '100%', maxWidth: 680, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 4px', marginBottom: 4, gap: 12 },
-  label:       { fontSize: '0.7rem', color: '#6b7db3', letterSpacing: 1 },
-  amount:      { fontSize: '1.1rem', fontWeight: 700, color: '#c7d2fe' },
-  profitTag:   { fontSize: '0.8rem', fontWeight: 700, padding: '2px 10px', borderRadius: 999 },
-  profitPos:   { background: 'rgba(34,197,94,0.15)', color: '#4ade80' },
-  profitNeg:   { background: 'rgba(239,68,68,0.15)', color: '#f87171' },
-  btnSmall:    { fontSize: '0.7rem', padding: '4px 10px', background: 'rgba(255,255,255,0.07)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, cursor: 'pointer' },
-  btnLogin:    { padding: '10px 20px', background: 'linear-gradient(135deg,#f97316,#ef4444)', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: '0.9rem' },
-  walletRow:   { width: '100%', maxWidth: 680, display: 'flex', gap: 12, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' },
-  walletAddr:  { fontSize: '0.75rem', color: '#64748b', fontFamily: 'monospace' },
-  explorerLink:{ fontSize: '0.72rem', color: '#818cf8', textDecoration: 'none' },
-  faucetLink:  { fontSize: '0.72rem', color: '#f97316', textDecoration: 'none' },
+  // ── Top bar
+  topBar:       { width: '100%', maxWidth: 680, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
+  topLeft:      { display: 'flex', flexDirection: 'column' },
+  h1:           { fontSize: '1.8rem', fontWeight: 800, letterSpacing: 2, color: '#fff', marginBottom: 2 },
+  subtitle:     { fontSize: '0.72rem', color: '#6b7db3', letterSpacing: 1 },
+
+  // ── Wallet widget (top right)
+  walletWidget: { display: 'flex', alignItems: 'center', gap: 8, background: '#0f1529', border: '1px solid #1e2d5a', borderRadius: 14, padding: '8px 12px' },
+  walletInfo:   { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 },
+  walletBal:    { fontSize: '0.95rem', fontWeight: 700, color: '#c7d2fe' },
+  walletAddr2:  { fontSize: '0.65rem', color: '#475569', fontFamily: 'monospace' },
+  btnDeposit:   { padding: '6px 12px', background: 'linear-gradient(135deg,#f97316,#ef4444)', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: '0.78rem', whiteSpace: 'nowrap' },
+
+  // ── Deposit modal
+  modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 16 },
+  modalBox:     { background: '#0f1529', border: '1px solid #1e2d5a', borderRadius: 20, padding: 28, width: '100%', maxWidth: 480 },
+  modalHeader:  { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  modalTitle:   { fontSize: '1.2rem', fontWeight: 800, color: '#fff' },
+  modalClose:   { background: 'none', border: 'none', color: '#64748b', fontSize: '1.1rem', cursor: 'pointer' },
+  modalSubtitle:{ fontSize: '0.82rem', color: '#94a3b8', marginBottom: 18, lineHeight: 1.5 },
+  addrBox:      { display: 'flex', alignItems: 'center', gap: 8, background: '#1e293b', borderRadius: 10, padding: '10px 14px', marginBottom: 20 },
+  addrText:     { fontSize: '0.72rem', fontFamily: 'monospace', color: '#c7d2fe', flex: 1, wordBreak: 'break-all' },
+  btnCopy:      { padding: '6px 14px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem', whiteSpace: 'nowrap' },
+  modalSteps:   { display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 },
+  modalStep:    { display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: '0.8rem', color: '#94a3b8', lineHeight: 1.5 },
+  stepNum:      { background: '#1e293b', color: '#f97316', borderRadius: 999, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.75rem', flexShrink: 0 },
+  modalLink:    { color: '#f97316', textDecoration: 'none' },
+  explorerBtn:  { display: 'block', textAlign: 'center', padding: '10px', background: 'rgba(129,140,248,0.1)', border: '1px solid rgba(129,140,248,0.2)', borderRadius: 10, color: '#818cf8', textDecoration: 'none', fontSize: '0.8rem' },
+
+  label:        { fontSize: '0.7rem', color: '#6b7db3', letterSpacing: 1 },
+  amount:       { fontSize: '1.1rem', fontWeight: 700, color: '#c7d2fe' },
+  profitTag:    { fontSize: '0.8rem', fontWeight: 700, padding: '2px 10px', borderRadius: 999 },
+  profitPos:    { background: 'rgba(34,197,94,0.15)', color: '#4ade80' },
+  profitNeg:    { background: 'rgba(239,68,68,0.15)', color: '#f87171' },
+  btnSmall:     { padding: '6px 10px', background: 'rgba(255,255,255,0.07)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, cursor: 'pointer', fontSize: '0.72rem' },
+  btnLogin:     { padding: '10px 20px', background: 'linear-gradient(135deg,#f97316,#ef4444)', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: '0.9rem' },
+  walletAddr:   { fontSize: '0.75rem', color: '#64748b', fontFamily: 'monospace' },
+  explorerLink: { fontSize: '0.72rem', color: '#818cf8', textDecoration: 'none' },
+  faucetLink:   { fontSize: '0.72rem', color: '#f97316', textDecoration: 'none' },
   gameWrap:    { width: '100%', maxWidth: 680, background: '#0f1529', border: '1px solid #1e2d5a', borderRadius: 20, overflow: 'hidden', position: 'relative', marginBottom: 20 },
   canvas:      { display: 'block', width: '100%', height: 320 },
   multDisplay: { position: 'absolute', left: '50%', transform: 'translateX(-50%)', textAlign: 'center', pointerEvents: 'none', transition: 'top 0.35s ease' },
