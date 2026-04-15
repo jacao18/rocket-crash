@@ -213,7 +213,7 @@
     <canvas id="gameCanvas"></canvas>
 
     <div class="multiplier-display state-idle" id="multDisplay">
-      <div class="value" id="multValue">1.00x</div>
+      <div class="value" id="multValue">0.80x</div>
       <div class="label" id="multLabel">WAITING</div>
     </div>
 
@@ -447,26 +447,55 @@ function draw() {
 }
 
 function drawRocket(x, y, exploded) {
-  if (exploded) return; // explosion replaces rocket
+  if (exploded) return;
 
-  // Glow behind rocket
-  const glow = ctx.createRadialGradient(x, y, 0, x, y, 40);
-  glow.addColorStop(0, 'rgba(34,211,238,0.35)');
-  glow.addColorStop(1, 'rgba(34,211,238,0)');
-  ctx.fillStyle = glow;
-  ctx.beginPath();
-  ctx.arc(x, y, 40, 0, Math.PI * 2);
-  ctx.fill();
+  const wobble = Math.sin(Date.now() / 200) * 0.06;
+  const size   = 36;
 
-  // Rocket emoji
-  ctx.font = `${28 / devicePixelRatio * devicePixelRatio}px serif`;
   ctx.save();
   ctx.translate(x, y);
-  // slight wobble
-  const wobble = Math.sin(Date.now() / 200) * 0.06;
   ctx.rotate(wobble);
-  ctx.fillText('🚀', -14, 14);
+
+  // Outer glow
+  const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, 52);
+  glow.addColorStop(0, 'rgba(255,255,255,0.18)');
+  glow.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(0, 0, 52, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Draw the 8-pointed star / diamond ring logo
+  drawStarLogo(0, 0, size);
+
   ctx.restore();
+}
+
+function drawStarLogo(cx, cy, s) {
+  // 8 squares arranged in a ring, alternating axis-aligned and 45°-rotated
+  const count  = 8;
+  const radius = s * 0.72;
+  const sq     = s * 0.38;
+
+  for (let i = 0; i < count; i++) {
+    const angle  = (i / count) * Math.PI * 2 - Math.PI / 2;
+    const px     = cx + Math.cos(angle) * radius;
+    const py     = cy + Math.sin(angle) * radius;
+    const rotate = i % 2 === 0 ? 0 : Math.PI / 4;
+
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.rotate(angle + rotate);
+
+    // White square with slight glow
+    ctx.shadowColor = 'rgba(255,255,255,0.9)';
+    ctx.shadowBlur  = 8;
+    ctx.fillStyle   = '#ffffff';
+    ctx.fillRect(-sq / 2, -sq / 2, sq, sq);
+    ctx.shadowBlur  = 0;
+
+    ctx.restore();
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -483,7 +512,7 @@ function gameLoop(ts) {
   // Multiplier grows over time: m = 1 + K * elapsed^1.4
   // This gives a natural slow-then-faster feel.
   // The crash point is purely the random target — invisible in the formula.
-  currentMult = 1 + SPEED_K * Math.pow(elapsed, 1.4);
+  currentMult = 0.8 + SPEED_K * Math.pow(elapsed, 1.4);
   currentMult = Math.round(currentMult * 100) / 100;
 
   // Move stars faster as we go higher
@@ -620,7 +649,7 @@ function drawCrashPoint() {
   const u = Math.random();
   // Inverse transform: -ln(U) / lambda; lambda=0.7 → mean ≈ 2.4x
   let v = 1 + (-Math.log(u) / 0.7);
-  v = Math.max(1.01, Math.min(10.00, v));
+  v = Math.max(0.81, Math.min(10.00, v));
   return parseFloat(v.toFixed(2));
 }
 
@@ -637,7 +666,7 @@ function resetIdle() {
 
   document.getElementById('crashBanner').classList.remove('show');
   document.getElementById('cashBanner').classList.remove('show');
-  updateMultDisplay(1, 'idle');
+  updateMultDisplay(0.8, 'idle');
   initStars();
   draw();
 }
