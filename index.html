@@ -52,18 +52,19 @@
       height: 320px;
     }
 
-    /* Multiplier overlay — repositions based on game state */
+    /* Multiplier overlay — fixed positions per state */
     .multiplier-display {
       position: absolute;
-      top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%);
+      transform: translateX(-50%);
       text-align: center;
       pointer-events: none;
       transition: top 0.4s ease;
+      top: 12px;
     }
     .multiplier-display.state-idle {
-      top: 78%;
+      top: auto;
+      bottom: 18px;
     }
     .multiplier-display .value {
       font-size: 4.5rem;
