@@ -59,12 +59,11 @@
       transform: translateX(-50%);
       text-align: center;
       pointer-events: none;
-      transition: top 0.4s ease;
+      transition: top 0.35s ease;
       top: 12px;
     }
     .multiplier-display.state-idle {
-      top: auto;
-      bottom: 18px;
+      top: calc(100% - 80px);
     }
     .multiplier-display .value {
       font-size: 4.5rem;
@@ -604,7 +603,7 @@ function gameLoop(ts) {
   // Keep rocket centered horizontally, hovering at 35% from top
   const W = CW(), H = CH();
   rocketX = W / 2;
-  rocketY = H * 0.35;
+  rocketY = H * 0.52;
 
   // Spawn exhaust trail downward from rocket
   spawnParticles(rocketX, rocketY + 20);
@@ -803,7 +802,7 @@ function addHistory(mult, won) {
 //  INIT
 // ═══════════════════════════════════════════════════════════
 draw();
-updateMultDisplay(1, 'idle');
+updateMultDisplay(0.8, 'idle');
 </script>
 </body>
 </html>
