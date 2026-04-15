@@ -365,6 +365,58 @@ export default function App() {
   }
 
   // ─────────────────────────────────────────────────────────
+  //  WITHDRAW STATE
+  // ─────────────────────────────────────────────────────────
+  const [showWithdraw, setShowWithdraw]   = useState(false)
+  const [withdrawTo, setWithdrawTo]       = useState('')
+  const [withdrawAmt, setWithdrawAmt]     = useState('')
+  const [withdrawStatus, setWithdrawStatus] = useState('')
+  const [withdrawing, setWithdrawing]     = useState(false)
+
+  const { sendTransactionAsync } = useSendTransaction()
+
+  async function doWithdraw() {
+    if (!withdrawTo || !withdrawAmt) return
+    const bal = balanceData ? parseFloat(formatEther(balanceData.value)) : 0
+    const amt = parseFloat(withdrawAmt)
+
+    if (isNaN(amt) || amt <= 0)          { setWithdrawStatus('❌ Invalid amount.'); return }
+    if (amt > bal)                        { setWithdrawStatus('❌ Insufficient balance.'); return }
+    if (!/^0x[0-9a-fA-F]{40}$/.test(withdrawTo)) { setWithdrawStatus('❌ Invalid address.'); return }
+
+    setWithdrawing(true)
+    setWithdrawStatus('⏳ Sending transaction…')
+
+    try {
+      const provider = await embeddedWallet.getEthereumProvider()
+
+      const txHash = await sendTransactionAsync({
+        to:    withdrawTo,
+        value: parseEther(withdrawAmt),
+        account: address,
+      })
+
+      setWithdrawStatus(`✅ Sent! Tx: ${txHash.slice(0, 10)}…`)
+      refetchBalance()
+      setWithdrawAmt('')
+      setWithdrawTo('')
+    } catch (err) {
+      console.error(err)
+      setWithdrawStatus('❌ Transaction failed or rejected.')
+    } finally {
+      setWithdrawing(false)
+    }
+  }
+
+  function setMaxWithdraw() {
+    if (!balanceData) return
+    const bal = parseFloat(formatEther(balanceData.value))
+    // Leave 0.0001 ETH for gas
+    const max = Math.max(0, bal - 0.0001)
+    setWithdrawAmt(max.toFixed(6))
+  }
+
+  // ─────────────────────────────────────────────────────────
   //  RENDER
   // ─────────────────────────────────────────────────────────
   const balEth   = balanceData ? parseFloat(formatEther(balanceData.value)).toFixed(4) : '—'
@@ -392,6 +444,7 @@ export default function App() {
                 <span style={styles.walletAddr2}>{address.slice(0, 6)}…{address.slice(-4)}</span>
               </div>
               <button onClick={() => setShowDeposit(true)} style={styles.btnDeposit}>+ Deposit</button>
+              <button onClick={() => { setShowWithdraw(true); setWithdrawStatus('') }} style={styles.btnWithdraw}>↑ Withdraw</button>
               <button onClick={logout} style={styles.btnSmall}>Logout</button>
             </>
           ) : (
@@ -399,6 +452,75 @@ export default function App() {
           )}
         </div>
       </div>
+
+      {/* ── WITHDRAW MODAL ── */}
+      {showWithdraw && address && (
+        <div style={styles.modalOverlay} onClick={() => setShowWithdraw(false)}>
+          <div style={styles.modalBox} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <span style={styles.modalTitle}>↑ Withdraw ETH</span>
+              <button onClick={() => setShowWithdraw(false)} style={styles.modalClose}>✕</button>
+            </div>
+
+            <p style={styles.modalSubtitle}>
+              Send ETH from your game wallet to any external address on <b style={{ color: '#f97316' }}>Soneium Minato</b>.
+            </p>
+
+            {/* From */}
+            <div style={styles.withdrawLabel}>FROM</div>
+            <div style={{ ...styles.addrBox, marginBottom: 12 }}>
+              <span style={styles.addrText}>{address}</span>
+              <span style={{ fontSize: '0.7rem', color: '#4ade80', whiteSpace: 'nowrap' }}>{balEth} ETH</span>
+            </div>
+
+            {/* To */}
+            <div style={styles.withdrawLabel}>TO ADDRESS</div>
+            <input
+              type="text"
+              placeholder="0x..."
+              value={withdrawTo}
+              onChange={e => setWithdrawTo(e.target.value)}
+              style={styles.withdrawInput}
+            />
+
+            {/* Amount */}
+            <div style={{ ...styles.withdrawLabel, marginTop: 12 }}>AMOUNT (ETH)</div>
+            <div style={styles.amtRow}>
+              <input
+                type="number"
+                placeholder="0.000"
+                min="0"
+                step="0.001"
+                value={withdrawAmt}
+                onChange={e => setWithdrawAmt(e.target.value)}
+                style={{ ...styles.withdrawInput, flex: 1, marginBottom: 0 }}
+              />
+              <button onClick={setMaxWithdraw} style={styles.btnMax}>MAX</button>
+            </div>
+
+            {/* Status */}
+            {withdrawStatus && (
+              <div style={styles.withdrawStatus}>{withdrawStatus}</div>
+            )}
+
+            <button
+              onClick={doWithdraw}
+              disabled={withdrawing || !withdrawTo || !withdrawAmt}
+              style={{ ...styles.btnWithdrawSend, opacity: (withdrawing || !withdrawTo || !withdrawAmt) ? 0.4 : 1 }}
+            >
+              {withdrawing ? '⏳ Sending…' : '↑ Send ETH'}
+            </button>
+
+            <a
+              href={`https://explorer-testnet.soneium.org/address/${address}`}
+              target="_blank" rel="noreferrer"
+              style={{ ...styles.explorerBtn, marginTop: 12 }}
+            >
+              View wallet on Explorer ↗
+            </a>
+          </div>
+        </div>
+      )}
 
       {/* ── DEPOSIT MODAL ── */}
       {showDeposit && address && (
@@ -548,6 +670,13 @@ const styles = {
   walletBal:    { fontSize: '0.95rem', fontWeight: 700, color: '#c7d2fe' },
   walletAddr2:  { fontSize: '0.65rem', color: '#475569', fontFamily: 'monospace' },
   btnDeposit:   { padding: '6px 12px', background: 'linear-gradient(135deg,#f97316,#ef4444)', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: '0.78rem', whiteSpace: 'nowrap' },
+  btnWithdraw:  { padding: '6px 12px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: '0.78rem', whiteSpace: 'nowrap' },
+  withdrawLabel:{ fontSize: '0.65rem', letterSpacing: 1.5, color: '#6b7db3', marginBottom: 6, textTransform: 'uppercase' },
+  withdrawInput:{ width: '100%', background: '#1e293b', border: '1px solid #2d3f5e', borderRadius: 10, padding: '10px 14px', color: '#e2e8f0', fontSize: '0.85rem', outline: 'none', marginBottom: 4, fontFamily: 'monospace', boxSizing: 'border-box' },
+  amtRow:       { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 },
+  btnMax:       { padding: '10px 14px', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem' },
+  withdrawStatus:{ fontSize: '0.82rem', padding: '8px 12px', background: 'rgba(255,255,255,0.05)', borderRadius: 8, marginTop: 8, marginBottom: 4, color: '#e2e8f0' },
+  btnWithdrawSend:{ width: '100%', marginTop: 14, padding: '14px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 800, fontSize: '1rem', cursor: 'pointer', letterSpacing: 1 },
 
   // ── Deposit modal
   modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 16 },
