@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🚀 Rocket Crash — ETH</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0e1a;
+      color: #e0e6ff;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    h1 span { color: #f97316; }
+
+    .subtitle {
+      font-size: 0.78rem;
+      color: #6b7db3;
+      margin-bottom: 24px;
+      letter-spacing: 1px;
+    }
+
+    /* ── GAME CANVAS AREA ── */
+    .game-wrap {
+      width: 100%;
+      max-width: 680px;
+      background: #0f1529;
+      border: 1px solid #1e2d5a;
+      border-radius: 20px;
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 320px;
+    }
+
+    /* Multiplier overlay — center of canvas */
+    .multiplier-display {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+    }
+    .multiplier-display .value {
+      font-size: 4.5rem;
+      font-weight: 900;
+      line-height: 1;
+      text-shadow: 0 0 40px currentColor;
+      transition: color 0.2s;
+    }
+    .multiplier-display .label {
+      font-size: 0.72rem;
+      letter-spacing: 3px;
+      opacity: 0.55;
+      margin-top: 6px;
+      text-transform: uppercase;
+    }
+    .state-idle    .value { color: #94a3b8; }
+    .state-flying  .value { color: #22d3ee; }
+    .state-cashed  .value { color: #4ade80; }
+    .state-crashed .value { color: #f87171; }
+
+    /* Crash overlay */
+    .crash-banner {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(239,68,68,0.15);
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .crash-banner.show { display: flex; }
+    .crash-banner .big   { font-size: 2rem; font-weight: 900; color: #f87171; }
+    .crash-banner .small { font-size: 0.85rem; color: #fca5a5; }
+
+    /* Cash overlay */
+    .cash-banner {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(34,197,94,0.12);
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .cash-banner.show { display: flex; }
+    .cash-banner .big   { font-size: 2rem; font-weight: 900; color: #4ade80; }
+    .cash-banner .small { font-size: 0.85rem; color: #86efac; }
+
+    /* ── CONTROLS ── */
+    .panel {
+      width: 100%;
+      max-width: 680px;
+      background: #0f1529;
+      border: 1px solid #1e2d5a;
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+    }
+    .panel-row {
+      display: flex;
+      gap: 16px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+      min-width: 140px;
+    }
+    .field label {
+      font-size: 0.7rem;
+      letter-spacing: 1.5px;
+      color: #6b7db3;
+      text-transform: uppercase;
+    }
+    .field input[type="range"] {
+      accent-color: #f97316;
+      cursor: pointer;
+      width: 100%;
+    }
+    .field .val-display {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #f97316;
+    }
+
+    .btn {
+      padding: 14px 28px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: transform 0.1s, opacity 0.2s;
+      flex-shrink: 0;
+    }
+    .btn:active { transform: scale(0.96); }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .btn-bet     { background: linear-gradient(135deg,#f97316,#ef4444); color:#fff; flex:1; min-width:140px; }
+    .btn-cashout { background: linear-gradient(135deg,#22c55e,#16a34a); color:#fff; flex:1; min-width:140px; }
+
+    /* ── BALANCE ── */
+    .balance-bar {
+      width: 100%;
+      max-width: 680px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 4px;
+      margin-bottom: 4px;
+    }
+    .balance-bar .label  { font-size:0.7rem; color:#6b7db3; letter-spacing:1px; }
+    .balance-bar .amount { font-size:1.1rem; font-weight:700; color:#c7d2fe; }
+    .balance-bar .amount span { color:#818cf8; font-size:0.75rem; }
+
+    .profit-tag { font-size:0.8rem; font-weight:700; padding:2px 10px; border-radius:999px; }
+    .profit-pos { background:rgba(34,197,94,0.15); color:#4ade80; }
+    .profit-neg { background:rgba(239,68,68,0.15); color:#f87171; }
+
+    /* ── HISTORY ── */
+    .history-wrap  { width:100%; max-width:680px; }
+    .history-title { font-size:0.7rem; letter-spacing:2px; color:#6b7db3; text-transform:uppercase; margin-bottom:8px; }
+    .history-list  { display:flex; gap:8px; flex-wrap:wrap; }
+    .history-chip  { padding:4px 10px; border-radius:999px; font-size:0.78rem; font-weight:700; }
+    .history-chip.win  { background:rgba(34,197,94,0.15); color:#4ade80; border:1px solid rgba(34,197,94,0.3); }
+    .history-chip.lose { background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); }
+  </style>
+</head>
+<body>
+
+  <h1>🚀 ROCKET <span>CRASH</span></h1>
+  <p class="subtitle">ETH · DEMO MODE</p>
+
+  <div class="balance-bar">
+    <span class="label">SALDO</span>
+    <span class="amount" id="balanceDisplay">0.5000 <span>ETH</span></span>
+    <span id="profitTag" class="profit-tag profit-pos" style="opacity:0">+0.000 ETH</span>
+  </div>
+
+  <div class="game-wrap">
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="multiplier-display state-idle" id="multDisplay">
+      <div class="value" id="multValue">1.00x</div>
+      <div class="label" id="multLabel">AGUARDANDO</div>
+    </div>
+
+    <div class="crash-banner" id="crashBanner">
+      <div class="big">💥 FOGUETE EXPLODIU!</div>
+      <div class="small" id="crashMsg"></div>
+    </div>
+    <div class="cash-banner" id="cashBanner">
+      <div class="big">✅ SACADO!</div>
+      <div class="small" id="cashMsg"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-row">
+      <div class="field">
+        <label>APOSTA (ETH)</label>
+        <input type="range" id="betSlider" min="1" max="10" value="1" step="1" />
+        <span class="val-display" id="betDisplay">0.001 ETH</span>
+      </div>
+      <button class="btn btn-bet"     id="btnBet"     onclick="startBet()">🚀 APOSTAR</button>
+      <button class="btn btn-cashout" id="btnCashout" disabled onclick="cashOut()">💰 SACAR</button>
+    </div>
+  </div>
+
+  <div class="history-wrap">
+    <div class="history-title">ÚLTIMAS RODADAS</div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════════════════════
+const BET_VALUES = [0.001,0.002,0.003,0.004,0.005,0.006,0.007,0.008,0.009,0.010];
+
+// Speed of multiplier increase (units/sec). Starts slow, accelerates over time.
+// The multiplier grows as:  m(t) = 1 + k * t^1.4   (purely time-based, NO target cap visible)
+// The crash happens when m(t) >= targetMult — completely hidden from the animation.
+const SPEED_K = 0.18; // tune: how fast mult grows per second
+
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+let balance     = 0.5;
+let betAmount   = 0.001;
+let targetMult  = 1;       // secret crash point drawn at round start
+let currentMult = 1.0;
+let gameState   = 'idle';  // idle | flying | crashed | cashed
+let animId      = null;
+let startTime   = null;
+let betActive   = false;
+let totalProfit = 0;
+
+// ── ROCKET position (absolute canvas coords)
+let rocketX = 0;
+let rocketY = 0;
+
+// ── Scrolling star field
+const STAR_COUNT = 80;
+let stars = [];
+
+// ── Exhaust particles
+let particles = [];
+
+// ═══════════════════════════════════════════════════════════
+//  CANVAS SETUP
+// ═══════════════════════════════════════════════════════════
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width  = canvas.offsetWidth  * devicePixelRatio;
+  canvas.height = canvas.offsetHeight * devicePixelRatio;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  initStars();
+}
+
+const CW = () => canvas.offsetWidth;
+const CH = () => canvas.offsetHeight;
+
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+// ── Slider
+const betSlider  = document.getElementById('betSlider');
+const betDisplay = document.getElementById('betDisplay');
+betSlider.addEventListener('input', () => {
+  betAmount = BET_VALUES[betSlider.value - 1];
+  betDisplay.textContent = betAmount.toFixed(3) + ' ETH';
+});
+
+// ═══════════════════════════════════════════════════════════
+//  STARS  (scrolling downward to simulate upward movement)
+// ═══════════════════════════════════════════════════════════
+function initStars() {
+  stars = [];
+  for (let i = 0; i < STAR_COUNT; i++) {
+    stars.push({
+      x:    Math.random() * CW(),
+      y:    Math.random() * CH(),
+      r:    Math.random() * 1.4 + 0.3,
+      spd:  Math.random() * 0.6 + 0.2,   // base scroll speed (px/frame)
+      a:    Math.random() * 0.6 + 0.2,
+    });
+  }
+}
+initStars();
+
+function updateStars(speedMult) {
+  // Stars scroll downward (rocket appears to go up).
+  // Speed increases with the multiplier to feel faster at higher altitudes.
+  const scroll = 1 + speedMult * 0.5;
+  stars.forEach(s => {
+    s.y += s.spd * scroll;
+    if (s.y > CH()) {
+      s.y = 0;
+      s.x = Math.random() * CW();
+    }
+  });
+}
+
+function drawStars() {
+  stars.forEach(s => {
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(200,220,255,${s.a})`;
+    ctx.fill();
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EXHAUST PARTICLES
+// ═══════════════════════════════════════════════════════════
+function spawnParticles(x, y) {
+  for (let i = 0; i < 4; i++) {
+    particles.push({
+      x, y,
+      vx: (Math.random() - 0.5) * 2,
+      vy: Math.random() * 3 + 1,   // downward
+      life: 1.0,
+      r:   Math.random() * 4 + 2,
+      hue: Math.random() * 40 + 20, // orange-yellow
+    });
+  }
+}
+
+function updateParticles() {
+  particles.forEach(p => {
+    p.x    += p.vx;
+    p.y    += p.vy;
+    p.life -= 0.04;
+    p.r    *= 0.95;
+  });
+  particles = particles.filter(p => p.life > 0);
+}
+
+function drawParticles() {
+  particles.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${p.hue}, 100%, 60%, ${p.life * 0.9})`;
+    ctx.fill();
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EXPLOSION PARTICLES  (burst on crash)
+// ═══════════════════════════════════════════════════════════
+let explodeParticles = [];
+
+function spawnExplosion(x, y) {
+  for (let i = 0; i < 60; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const spd   = Math.random() * 6 + 1;
+    explodeParticles.push({
+      x, y,
+      vx: Math.cos(angle) * spd,
+      vy: Math.sin(angle) * spd,
+      life: 1.0,
+      r:   Math.random() * 5 + 2,
+      hue: Math.random() < 0.5 ? 20 : 0,
+    });
+  }
+}
+
+function updateExplodeParticles() {
+  explodeParticles.forEach(p => {
+    p.x    += p.vx;
+    p.y    += p.vy;
+    p.vy   += 0.15;
+    p.life -= 0.025;
+    p.r    *= 0.97;
+  });
+  explodeParticles = explodeParticles.filter(p => p.life > 0);
+}
+
+function drawExplodeParticles() {
+  explodeParticles.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${p.hue}, 100%, 60%, ${p.life})`;
+    ctx.fill();
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MAIN DRAW
+// ═══════════════════════════════════════════════════════════
+function draw() {
+  const W = CW(), H = CH();
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  const bg = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W,H)*0.8);
+  bg.addColorStop(0, '#0d1325');
+  bg.addColorStop(1, '#07091400');
+  ctx.fillStyle = '#070914';
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  drawStars();
+  drawParticles();
+  drawExplodeParticles();
+
+  // Rocket (only while flying or just before crash reveal)
+  if (gameState === 'flying' || gameState === 'crashed') {
+    drawRocket(rocketX, rocketY, gameState === 'crashed');
+  }
+}
+
+function drawRocket(x, y, exploded) {
+  if (exploded) return; // explosion replaces rocket
+
+  // Glow behind rocket
+  const glow = ctx.createRadialGradient(x, y, 0, x, y, 40);
+  glow.addColorStop(0, 'rgba(34,211,238,0.35)');
+  glow.addColorStop(1, 'rgba(34,211,238,0)');
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(x, y, 40, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Rocket emoji
+  ctx.font = `${28 / devicePixelRatio * devicePixelRatio}px serif`;
+  ctx.save();
+  ctx.translate(x, y);
+  // slight wobble
+  const wobble = Math.sin(Date.now() / 200) * 0.06;
+  ctx.rotate(wobble);
+  ctx.fillText('🚀', -14, 14);
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  GAME LOOP — time-based, no target reveal
+// ═══════════════════════════════════════════════════════════
+let lastTs = null;
+
+function gameLoop(ts) {
+  if (!startTime) { startTime = ts; lastTs = ts; }
+  const elapsed = (ts - startTime) / 1000; // seconds
+  const dt      = (ts - lastTs)    / 1000;
+  lastTs = ts;
+
+  // Multiplier grows over time: m = 1 + K * elapsed^1.4
+  // This gives a natural slow-then-faster feel.
+  // The crash point is purely the random target — invisible in the formula.
+  currentMult = 1 + SPEED_K * Math.pow(elapsed, 1.4);
+  currentMult = Math.round(currentMult * 100) / 100;
+
+  // Move stars faster as we go higher
+  updateStars(currentMult - 1);
+
+  // Keep rocket centered horizontally, hovering at 35% from top
+  const W = CW(), H = CH();
+  rocketX = W / 2;
+  rocketY = H * 0.35;
+
+  // Spawn exhaust trail downward from rocket
+  spawnParticles(rocketX, rocketY + 20);
+  updateParticles();
+
+  // Update HUD
+  updateMultDisplay(currentMult, 'flying');
+
+  draw();
+
+  // Check crash
+  if (currentMult >= targetMult) {
+    triggerCrash();
+    return;
+  }
+
+  animId = requestAnimationFrame(gameLoop);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CRASH
+// ═══════════════════════════════════════════════════════════
+function triggerCrash() {
+  gameState = 'crashed';
+  cancelAnimationFrame(animId);
+
+  // Explosion burst at rocket position
+  spawnExplosion(rocketX, rocketY);
+
+  // Deduct bet if still active
+  if (betActive) {
+    balance    -= betAmount;
+    totalProfit -= betAmount;
+    betActive   = false;
+    addHistory(currentMult, false);
+    updateBalance();
+  }
+
+  updateMultDisplay(currentMult, 'crashed');
+  document.getElementById('crashBanner').classList.add('show');
+  document.getElementById('crashMsg').textContent =
+    `Explodiu em ${currentMult.toFixed(2)}x`;
+
+  // Animate explosion for a moment, then freeze
+  let explosionFrames = 0;
+  function explosionLoop() {
+    updateExplodeParticles();
+    draw();
+    if (++explosionFrames < 60) requestAnimationFrame(explosionLoop);
+  }
+  requestAnimationFrame(explosionLoop);
+
+  enableBetButton();
+  setTimeout(resetIdle, 3200);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CASH OUT
+// ═══════════════════════════════════════════════════════════
+function cashOut() {
+  if (gameState !== 'flying' || !betActive) return;
+  cancelAnimationFrame(animId);
+
+  betActive  = false;
+  gameState  = 'cashed';
+
+  const winAmount  = betAmount * currentMult;
+  const netGain    = winAmount - betAmount;
+  balance         += netGain;
+  totalProfit     += netGain;
+
+  addHistory(currentMult, true);
+  updateBalance();
+
+  updateMultDisplay(currentMult, 'cashed');
+  document.getElementById('cashBanner').classList.add('show');
+  document.getElementById('cashMsg').textContent =
+    `+${netGain.toFixed(4)} ETH  ·  ${currentMult.toFixed(2)}x`;
+
+  // Keep stars scrolling slowly for visual polish, then stop
+  let coasting = 0;
+  function coastLoop() {
+    updateStars(0.3);
+    updateParticles();
+    draw();
+    if (++coasting < 90) requestAnimationFrame(coastLoop);
+  }
+  requestAnimationFrame(coastLoop);
+
+  enableBetButton();
+  setTimeout(resetIdle, 3200);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BET START
+// ═══════════════════════════════════════════════════════════
+function startBet() {
+  if (gameState !== 'idle') return;
+  if (balance < betAmount) { alert('Saldo insuficiente!'); return; }
+
+  // Draw secret crash point — player has no visual hint
+  targetMult = drawCrashPoint();
+
+  betActive  = true;
+  gameState  = 'flying';
+  startTime  = null;
+  lastTs     = null;
+  particles  = [];
+  explodeParticles = [];
+
+  document.getElementById('btnBet').disabled     = true;
+  document.getElementById('btnCashout').disabled = false;
+  document.getElementById('betSlider').disabled  = true;
+
+  animId = requestAnimationFrame(gameLoop);
+}
+
+// ─── Crash point distribution ──────────────────────────────
+// Weighted toward low values (most crashes < 3x), rare highs.
+// Formula: -ln(U) maps uniform to exponential; we shift/scale
+// then clamp to [1.01, 10.00].
+function drawCrashPoint() {
+  // Exponential-like: most rounds crash between 1x-4x
+  // ~5% chance to reach 5x+, ~1% chance to reach 9x+
+  const u = Math.random();
+  // Inverse transform: -ln(U) / lambda; lambda=0.7 → mean ≈ 2.4x
+  let v = 1 + (-Math.log(u) / 0.7);
+  v = Math.max(1.01, Math.min(10.00, v));
+  return parseFloat(v.toFixed(2));
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RESET
+// ═══════════════════════════════════════════════════════════
+function resetIdle() {
+  gameState   = 'idle';
+  currentMult = 1.0;
+  targetMult  = 1;
+  startTime   = null;
+  particles   = [];
+  explodeParticles = [];
+
+  document.getElementById('crashBanner').classList.remove('show');
+  document.getElementById('cashBanner').classList.remove('show');
+  updateMultDisplay(1, 'idle');
+  initStars();
+  draw();
+}
+
+function enableBetButton() {
+  document.getElementById('btnBet').disabled     = false;
+  document.getElementById('btnCashout').disabled = true;
+  document.getElementById('betSlider').disabled  = false;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  UI HELPERS
+// ═══════════════════════════════════════════════════════════
+function updateMultDisplay(mult, state) {
+  const wrap  = document.getElementById('multDisplay');
+  const value = document.getElementById('multValue');
+  const label = document.getElementById('multLabel');
+
+  wrap.className = 'multiplier-display state-' + state;
+  value.textContent = mult.toFixed(2) + 'x';
+
+  const labels = { idle:'AGUARDANDO', flying: betActive ? 'VOANDO — SAQUE AGORA!' : 'VOANDO', crashed:'EXPLODIU!', cashed:'SACADO COM SUCESSO' };
+  label.textContent = labels[state] || '';
+}
+
+function updateBalance() {
+  document.getElementById('balanceDisplay').innerHTML =
+    balance.toFixed(4) + ' <span>ETH</span>';
+
+  const tag = document.getElementById('profitTag');
+  tag.style.opacity = '1';
+  if (totalProfit >= 0) {
+    tag.className   = 'profit-tag profit-pos';
+    tag.textContent = '+' + totalProfit.toFixed(4) + ' ETH';
+  } else {
+    tag.className   = 'profit-tag profit-neg';
+    tag.textContent = totalProfit.toFixed(4) + ' ETH';
+  }
+}
+
+function addHistory(mult, won) {
+  const list = document.getElementById('historyList');
+  const chip = document.createElement('span');
+  chip.className  = 'history-chip ' + (won ? 'win' : 'lose');
+  chip.textContent = mult.toFixed(2) + 'x';
+  list.prepend(chip);
+  while (list.children.length > 15) list.removeChild(list.lastChild);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+draw();
+updateMultDisplay(1, 'idle');
+</script>
+</body>
+</html>
