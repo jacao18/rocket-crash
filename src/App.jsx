@@ -674,7 +674,7 @@ const styles = {
   // ── Top bar
   topBar:       { width: '100%', maxWidth: 680, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
   topLeft:      { display: 'flex', flexDirection: 'column', gap: 4 },
-  brandLogo:    { height: 36, width: 'auto', objectFit: 'contain' },
+  brandLogo:    { height: 52, width: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 0 8px rgba(0,194,255,0.35))' },
   subtitle:     { fontSize: '0.68rem', color: '#4d7aaa', letterSpacing: 1.5, textTransform: 'uppercase' },
 
   // ── Wallet widget (top right)
