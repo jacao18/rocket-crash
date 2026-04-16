@@ -253,7 +253,14 @@ export default function App() {
       g.betActive = false
       setProfit(p => p - betAmount)
       setHistory(h => [{ mult: g.currentMult, won: false }, ...h].slice(0, 15))
-      refetchBalance()
+
+      // Expire the round on-chain so the next bet is not blocked
+      writeContractAsync({
+        address: ROCKET_CRASH_ADDRESS,
+        abi: ROCKET_CRASH_ABI,
+        functionName: 'expireRound',
+        args: [address],
+      }).then(() => refetchBalance()).catch(err => console.warn('expireRound failed:', err))
     }
 
     let frames = 0
