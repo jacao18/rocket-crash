@@ -1,3 +1,4 @@
+import cometLogo from './assets/comet-logo.png'
 import { usePrivy, useWallets } from '@privy-io/react-auth'
 import { useBalance, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi'
 import { parseEther, formatEther } from 'viem'
@@ -120,9 +121,9 @@ export default function App() {
 
     ctx.clearRect(0, 0, W, H)
     const bg = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W,H) * 0.8)
-    bg.addColorStop(0, '#0d1325')
-    bg.addColorStop(1, 'rgba(7,9,20,0)')
-    ctx.fillStyle = '#070914'; ctx.fillRect(0, 0, W, H)
+    bg.addColorStop(0, '#0F2040')
+    bg.addColorStop(1, 'rgba(8,16,31,0)')
+    ctx.fillStyle = '#08101F'; ctx.fillRect(0, 0, W, H)
     ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H)
 
     // Stars
@@ -431,15 +432,15 @@ export default function App() {
   const isCrash  = gameState === 'crashed'
   const isCashed = gameState === 'cashed'
 
-  const multColor = isCrash ? '#f87171' : isCashed ? '#4ade80' : isFlying ? '#22d3ee' : '#94a3b8'
+  const multColor = isCrash ? '#f87171' : isCashed ? '#00E5C8' : isFlying ? '#00C2FF' : '#4d7aaa'
 
   return (
     <>
       {/* ── TOP BAR ── */}
       <div style={styles.topBar}>
         <div style={styles.topLeft}>
-          <h1 style={styles.h1}>🚀 ROCKET <span style={{ color: '#f97316' }}>CRASH</span></h1>
-          <p style={styles.subtitle}>SONEIUM MINATO TESTNET</p>
+          <img src={cometLogo} alt="Comet" style={styles.brandLogo} />
+          <p style={styles.subtitle}>ROCKET CRASH · SONEIUM MINATO TESTNET</p>
         </div>
 
         {/* Wallet widget — top right */}
@@ -470,7 +471,7 @@ export default function App() {
             </div>
 
             <p style={styles.modalSubtitle}>
-              Send ETH from your game wallet to any external address on <b style={{ color: '#f97316' }}>Soneium Minato</b>.
+              Send ETH from your game wallet to any external address on <b style={{ color: '#00C2FF' }}>Soneium Minato</b>.
             </p>
 
             {/* From */}
@@ -538,7 +539,7 @@ export default function App() {
               <button onClick={() => setShowDeposit(false)} style={styles.modalClose}>✕</button>
             </div>
 
-            <p style={styles.modalSubtitle}>Send ETH from any wallet to your game address on <b style={{ color: '#f97316' }}>Soneium Minato</b> testnet:</p>
+            <p style={styles.modalSubtitle}>Send ETH from any wallet to your game address on <b style={{ color: '#00C2FF' }}>Soneium Minato</b> testnet:</p>
 
             {/* Address box */}
             <div style={styles.addrBox}>
@@ -559,7 +560,7 @@ export default function App() {
               </div>
               <div style={styles.modalStep}>
                 <span style={styles.stepNum}>3</span>
-                <span>Make sure you're on the <b style={{ color: '#f97316' }}>Soneium Minato (Chain ID: 1946)</b> network</span>
+                <span>Make sure you're on the <b style={{ color: '#00C2FF' }}>Soneium Minato (Chain ID: 1946)</b> network</span>
               </div>
               <div style={styles.modalStep}>
                 <span style={styles.stepNum}>4</span>
@@ -625,7 +626,7 @@ export default function App() {
               value={BET_VALUES.indexOf(betAmount) + 1}
               onChange={e => setBetAmount(BET_VALUES[e.target.value - 1])}
               disabled={isFlying}
-              style={{ accentColor: '#f97316', cursor: 'pointer', width: '100%' }}
+              style={{ accentColor: '#00C2FF', cursor: 'pointer', width: '100%' }}
             />
             <span style={styles.valDisplay}>{betAmount.toFixed(3)} ETH</span>
           </div>
@@ -662,76 +663,81 @@ export default function App() {
 }
 
 // ─────────────────────────────────────────────────────────
-//  STYLES
+//  STYLES  —  Comet brand palette
+//  Primary cyan:  #00C2FF  /  #0070D2
+//  Dark navy bg:  #08101F  /  #0D1A2E
+//  Card surface:  #0F2040
+//  Border:        #1A3560
+//  Accent teal:   #00E5C8
 // ─────────────────────────────────────────────────────────
 const styles = {
   // ── Top bar
   topBar:       { width: '100%', maxWidth: 680, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
-  topLeft:      { display: 'flex', flexDirection: 'column' },
-  h1:           { fontSize: '1.8rem', fontWeight: 800, letterSpacing: 2, color: '#fff', marginBottom: 2 },
-  subtitle:     { fontSize: '0.72rem', color: '#6b7db3', letterSpacing: 1 },
+  topLeft:      { display: 'flex', flexDirection: 'column', gap: 4 },
+  brandLogo:    { height: 36, width: 'auto', objectFit: 'contain' },
+  subtitle:     { fontSize: '0.68rem', color: '#4d7aaa', letterSpacing: 1.5, textTransform: 'uppercase' },
 
   // ── Wallet widget (top right)
-  walletWidget: { display: 'flex', alignItems: 'center', gap: 8, background: '#0f1529', border: '1px solid #1e2d5a', borderRadius: 14, padding: '8px 12px' },
+  walletWidget: { display: 'flex', alignItems: 'center', gap: 8, background: '#0F2040', border: '1px solid #1A3560', borderRadius: 14, padding: '8px 12px' },
   walletInfo:   { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 },
-  walletBal:    { fontSize: '0.95rem', fontWeight: 700, color: '#c7d2fe' },
-  walletAddr2:  { fontSize: '0.65rem', color: '#475569', fontFamily: 'monospace' },
-  btnDeposit:   { padding: '6px 12px', background: 'linear-gradient(135deg,#f97316,#ef4444)', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: '0.78rem', whiteSpace: 'nowrap' },
-  btnWithdraw:  { padding: '6px 12px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: '0.78rem', whiteSpace: 'nowrap' },
-  withdrawLabel:{ fontSize: '0.65rem', letterSpacing: 1.5, color: '#6b7db3', marginBottom: 6, textTransform: 'uppercase' },
-  withdrawInput:{ width: '100%', background: '#1e293b', border: '1px solid #2d3f5e', borderRadius: 10, padding: '10px 14px', color: '#e2e8f0', fontSize: '0.85rem', outline: 'none', marginBottom: 4, fontFamily: 'monospace', boxSizing: 'border-box' },
+  walletBal:    { fontSize: '0.95rem', fontWeight: 700, color: '#a8d4ff' },
+  walletAddr2:  { fontSize: '0.65rem', color: '#3a5c80', fontFamily: 'monospace' },
+  btnDeposit:   { padding: '6px 12px', background: 'linear-gradient(135deg,#00C2FF,#0070D2)', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: '0.78rem', whiteSpace: 'nowrap' },
+  btnWithdraw:  { padding: '6px 12px', background: 'linear-gradient(135deg,#00E5C8,#0099B8)', color: '#08101F', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: '0.78rem', whiteSpace: 'nowrap' },
+  withdrawLabel:{ fontSize: '0.65rem', letterSpacing: 1.5, color: '#4d7aaa', marginBottom: 6, textTransform: 'uppercase' },
+  withdrawInput:{ width: '100%', background: '#0D1A2E', border: '1px solid #1A3560', borderRadius: 10, padding: '10px 14px', color: '#d0eaff', fontSize: '0.85rem', outline: 'none', marginBottom: 4, fontFamily: 'monospace', boxSizing: 'border-box' },
   amtRow:       { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 },
-  btnMax:       { padding: '10px 14px', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem' },
-  withdrawStatus:{ fontSize: '0.82rem', padding: '8px 12px', background: 'rgba(255,255,255,0.05)', borderRadius: 8, marginTop: 8, marginBottom: 4, color: '#e2e8f0' },
-  btnWithdrawSend:{ width: '100%', marginTop: 14, padding: '14px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 800, fontSize: '1rem', cursor: 'pointer', letterSpacing: 1 },
+  btnMax:       { padding: '10px 14px', background: 'rgba(0,194,255,0.12)', border: '1px solid rgba(0,194,255,0.3)', color: '#00C2FF', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem' },
+  withdrawStatus:{ fontSize: '0.82rem', padding: '8px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: 8, marginTop: 8, marginBottom: 4, color: '#d0eaff' },
+  btnWithdrawSend:{ width: '100%', marginTop: 14, padding: '14px', background: 'linear-gradient(135deg,#00C2FF,#0070D2)', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 800, fontSize: '1rem', cursor: 'pointer', letterSpacing: 1 },
 
   // ── Deposit modal
-  modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 16 },
-  modalBox:     { background: '#0f1529', border: '1px solid #1e2d5a', borderRadius: 20, padding: 28, width: '100%', maxWidth: 480 },
+  modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 16 },
+  modalBox:     { background: '#0F2040', border: '1px solid #1A3560', borderRadius: 20, padding: 28, width: '100%', maxWidth: 480 },
   modalHeader:  { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   modalTitle:   { fontSize: '1.2rem', fontWeight: 800, color: '#fff' },
-  modalClose:   { background: 'none', border: 'none', color: '#64748b', fontSize: '1.1rem', cursor: 'pointer' },
-  modalSubtitle:{ fontSize: '0.82rem', color: '#94a3b8', marginBottom: 18, lineHeight: 1.5 },
-  addrBox:      { display: 'flex', alignItems: 'center', gap: 8, background: '#1e293b', borderRadius: 10, padding: '10px 14px', marginBottom: 20 },
-  addrText:     { fontSize: '0.72rem', fontFamily: 'monospace', color: '#c7d2fe', flex: 1, wordBreak: 'break-all' },
-  btnCopy:      { padding: '6px 14px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem', whiteSpace: 'nowrap' },
+  modalClose:   { background: 'none', border: 'none', color: '#3a5c80', fontSize: '1.1rem', cursor: 'pointer' },
+  modalSubtitle:{ fontSize: '0.82rem', color: '#7aaac8', marginBottom: 18, lineHeight: 1.5 },
+  addrBox:      { display: 'flex', alignItems: 'center', gap: 8, background: '#0D1A2E', borderRadius: 10, padding: '10px 14px', marginBottom: 20 },
+  addrText:     { fontSize: '0.72rem', fontFamily: 'monospace', color: '#a8d4ff', flex: 1, wordBreak: 'break-all' },
+  btnCopy:      { padding: '6px 14px', background: 'linear-gradient(135deg,#00C2FF,#0070D2)', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem', whiteSpace: 'nowrap' },
   modalSteps:   { display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 },
-  modalStep:    { display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: '0.8rem', color: '#94a3b8', lineHeight: 1.5 },
-  stepNum:      { background: '#1e293b', color: '#f97316', borderRadius: 999, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.75rem', flexShrink: 0 },
-  modalLink:    { color: '#f97316', textDecoration: 'none' },
-  explorerBtn:  { display: 'block', textAlign: 'center', padding: '10px', background: 'rgba(129,140,248,0.1)', border: '1px solid rgba(129,140,248,0.2)', borderRadius: 10, color: '#818cf8', textDecoration: 'none', fontSize: '0.8rem' },
+  modalStep:    { display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: '0.8rem', color: '#7aaac8', lineHeight: 1.5 },
+  stepNum:      { background: '#0D1A2E', color: '#00C2FF', borderRadius: 999, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.75rem', flexShrink: 0 },
+  modalLink:    { color: '#00C2FF', textDecoration: 'none' },
+  explorerBtn:  { display: 'block', textAlign: 'center', padding: '10px', background: 'rgba(0,194,255,0.08)', border: '1px solid rgba(0,194,255,0.2)', borderRadius: 10, color: '#00C2FF', textDecoration: 'none', fontSize: '0.8rem' },
 
-  label:        { fontSize: '0.7rem', color: '#6b7db3', letterSpacing: 1 },
-  amount:       { fontSize: '1.1rem', fontWeight: 700, color: '#c7d2fe' },
+  label:        { fontSize: '0.7rem', color: '#4d7aaa', letterSpacing: 1 },
+  amount:       { fontSize: '1.1rem', fontWeight: 700, color: '#a8d4ff' },
   profitTag:    { fontSize: '0.8rem', fontWeight: 700, padding: '2px 10px', borderRadius: 999 },
-  profitPos:    { background: 'rgba(34,197,94,0.15)', color: '#4ade80' },
+  profitPos:    { background: 'rgba(0,229,200,0.15)', color: '#00E5C8' },
   profitNeg:    { background: 'rgba(239,68,68,0.15)', color: '#f87171' },
-  btnSmall:     { padding: '6px 10px', background: 'rgba(255,255,255,0.07)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, cursor: 'pointer', fontSize: '0.72rem' },
-  btnLogin:     { padding: '10px 20px', background: 'linear-gradient(135deg,#f97316,#ef4444)', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: '0.9rem' },
-  walletAddr:   { fontSize: '0.75rem', color: '#64748b', fontFamily: 'monospace' },
-  explorerLink: { fontSize: '0.72rem', color: '#818cf8', textDecoration: 'none' },
-  faucetLink:   { fontSize: '0.72rem', color: '#f97316', textDecoration: 'none' },
-  gameWrap:    { width: '100%', maxWidth: 680, background: '#0f1529', border: '1px solid #1e2d5a', borderRadius: 20, overflow: 'hidden', position: 'relative', marginBottom: 20 },
+  btnSmall:     { padding: '6px 10px', background: 'rgba(255,255,255,0.05)', color: '#7aaac8', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, cursor: 'pointer', fontSize: '0.72rem' },
+  btnLogin:     { padding: '10px 20px', background: 'linear-gradient(135deg,#00C2FF,#0070D2)', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: '0.9rem' },
+  walletAddr:   { fontSize: '0.75rem', color: '#3a5c80', fontFamily: 'monospace' },
+  explorerLink: { fontSize: '0.72rem', color: '#00C2FF', textDecoration: 'none' },
+  faucetLink:   { fontSize: '0.72rem', color: '#00E5C8', textDecoration: 'none' },
+  gameWrap:    { width: '100%', maxWidth: 680, background: '#0F2040', border: '1px solid #1A3560', borderRadius: 20, overflow: 'hidden', position: 'relative', marginBottom: 20 },
   canvas:      { display: 'block', width: '100%', height: 320 },
   multDisplay: { position: 'absolute', left: '50%', transform: 'translateX(-50%)', textAlign: 'center', pointerEvents: 'none', transition: 'top 0.35s ease' },
   multValue:   { fontSize: '4.5rem', fontWeight: 900, lineHeight: 1, textShadow: '0 0 40px currentColor', transition: 'color 0.2s' },
   multLabel:   { fontSize: '0.72rem', letterSpacing: 3, opacity: 0.55, marginTop: 6, textTransform: 'uppercase' },
   banner:      { display: 'flex', position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 6 },
   bannerBig:   { fontSize: '2rem', fontWeight: 900 },
-  bannerSmall: { fontSize: '0.85rem', color: '#e2e8f0' },
-  statusMsg:   { width: '100%', maxWidth: 680, textAlign: 'center', fontSize: '0.85rem', color: '#94a3b8', marginBottom: 8 },
-  panel:       { width: '100%', maxWidth: 680, background: '#0f1529', border: '1px solid #1e2d5a', borderRadius: 16, padding: '20px 24px', marginBottom: 16 },
+  bannerSmall: { fontSize: '0.85rem', color: '#d0eaff' },
+  statusMsg:   { width: '100%', maxWidth: 680, textAlign: 'center', fontSize: '0.85rem', color: '#7aaac8', marginBottom: 8 },
+  panel:       { width: '100%', maxWidth: 680, background: '#0F2040', border: '1px solid #1A3560', borderRadius: 16, padding: '20px 24px', marginBottom: 16 },
   panelRow:    { display: 'flex', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap' },
   field:       { display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minWidth: 140 },
-  fieldLabel:  { fontSize: '0.7rem', letterSpacing: '1.5px', color: '#6b7db3', textTransform: 'uppercase' },
-  valDisplay:  { fontSize: '1rem', fontWeight: 700, color: '#f97316' },
+  fieldLabel:  { fontSize: '0.7rem', letterSpacing: '1.5px', color: '#4d7aaa', textTransform: 'uppercase' },
+  valDisplay:  { fontSize: '1rem', fontWeight: 700, color: '#00C2FF' },
   btn:         { padding: '14px 28px', border: 'none', borderRadius: 12, fontSize: '1rem', fontWeight: 800, cursor: 'pointer', letterSpacing: 1, flex: 1, minWidth: 140 },
-  btnBet:      { background: 'linear-gradient(135deg,#f97316,#ef4444)', color: '#fff' },
-  btnCashout:  { background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff' },
+  btnBet:      { background: 'linear-gradient(135deg,#00C2FF,#0070D2)', color: '#fff' },
+  btnCashout:  { background: 'linear-gradient(135deg,#00E5C8,#00A896)', color: '#08101F' },
   historyWrap: { width: '100%', maxWidth: 680 },
-  historyTitle:{ fontSize: '0.7rem', letterSpacing: 2, color: '#6b7db3', textTransform: 'uppercase', marginBottom: 8 },
+  historyTitle:{ fontSize: '0.7rem', letterSpacing: 2, color: '#4d7aaa', textTransform: 'uppercase', marginBottom: 8 },
   historyList: { display: 'flex', gap: 8, flexWrap: 'wrap' },
   historyChip: { padding: '4px 10px', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700 },
-  chipWin:     { background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' },
+  chipWin:     { background: 'rgba(0,229,200,0.15)', color: '#00E5C8', border: '1px solid rgba(0,229,200,0.3)' },
   chipLose:    { background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' },
 }
