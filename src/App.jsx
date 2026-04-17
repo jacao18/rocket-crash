@@ -5,7 +5,7 @@ import { useBalance, useSendTransaction, useWaitForTransactionReceipt } from 'wa
 import { parseEther, formatEther } from 'viem'
 import { useEffect, useRef, useState } from 'react'
 import { ROCKET_CRASH_ABI, ROCKET_CRASH_ADDRESS } from './contract.js'
-import { useWriteContract, useWatchContractEvent } from 'wagmi'
+import { useWriteContract } from 'wagmi'
 
 // ─── BET VALUES ──────────────────────────────────────────────
 const BET_VALUES = [0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.010]
@@ -40,8 +40,36 @@ export default function App() {
     currentMult: 0.8, gameState: 'idle',
   })
 
-  // ── Contract write
+  // ── Contract write (placeBet only — cashout/crash go through backend)
   const { writeContractAsync } = useWriteContract()
+
+  // ── Backend API helpers
+  async function apiBet(player, betAmount) {
+    const res = await fetch('/api/bet', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player, betAmount }),
+    })
+    if (!res.ok) throw new Error((await res.json()).error || 'api/bet failed')
+  }
+
+  async function apiCashout(player, multX100) {
+    const res = await fetch('/api/cashout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player, multX100 }),
+    })
+    if (!res.ok) throw new Error((await res.json()).error || 'api/cashout failed')
+    return res.json()
+  }
+
+  async function apiCrash(player) {
+    await fetch('/api/crash', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player }),
+    }).catch(err => console.warn('api/crash failed:', err))
+  }
 
   // ─────────────────────────────────────────────────────────
   //  CANVAS INIT
@@ -255,14 +283,9 @@ export default function App() {
       g.betActive = false
       setProfit(p => p - betAmount)
       setHistory(h => [{ mult: g.currentMult, won: false }, ...h].slice(0, 15))
-
-      // Expire the round on-chain so the next bet is not blocked
-      writeContractAsync({
-        address: ROCKET_CRASH_ADDRESS,
-        abi: ROCKET_CRASH_ABI,
-        functionName: 'expireRound',
-        args: [address],
-      }).then(() => refetchBalance()).catch(err => console.warn('expireRound failed:', err))
+      // Tell backend to call registerCrash() on-chain
+      apiCrash(address)
+      setTimeout(() => refetchBalance(), 4000)
     }
 
     let frames = 0
@@ -307,6 +330,9 @@ export default function App() {
       })
       setStatusMsg('Bet placed! 🚀')
 
+      // Notify backend so it can process cashout/crash on-chain
+      await apiBet(address, betAmount)
+
       const g = gameRef.current
       g.targetMult = drawCrashPoint()
       g.betActive  = true
@@ -331,24 +357,23 @@ export default function App() {
     g.gameState  = 'cashed'
     setGameState('cashed')
 
-    const mult     = g.currentMult
-    const netGain  = betAmount * mult - betAmount
+    const mult    = g.currentMult
+    const payout  = betAmount * mult
+    const netGain = payout - betAmount
     setProfit(p => p + netGain)
     setHistory(h => [{ mult, won: true }, ...h].slice(0, 15))
 
-    setStatusMsg(`Cashed out at ${mult.toFixed(2)}x — waiting for payout…`)
+    setStatusMsg(`Cashed out at ${mult.toFixed(2)}x — sending payout…`)
 
     try {
-      await writeContractAsync({
-        address: ROCKET_CRASH_ADDRESS,
-        abi: ROCKET_CRASH_ABI,
-        functionName: 'cashOut',
-      })
-      refetchBalance()
+      const multX100 = Math.round(mult * 100)
+      const result = await apiCashout(address, multX100)
       setStatusMsg(`✅ +${netGain.toFixed(4)} ETH at ${mult.toFixed(2)}x`)
+      // Balance will update after the on-chain tx confirms
+      setTimeout(() => refetchBalance(), 4000)
     } catch (err) {
-      console.error(err)
-      setStatusMsg('Cashout tx failed.')
+      console.error('[cashout]', err)
+      setStatusMsg(`⚠️ Cashed out at ${mult.toFixed(2)}x — payout pending`)
     }
 
     setTimeout(() => resetIdle(), 3200)

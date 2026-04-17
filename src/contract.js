@@ -1,5 +1,6 @@
-// ── Deploy address (fill in after running: npx hardhat run scripts/deploy.js --network minato)
-export const ROCKET_CRASH_ADDRESS = '0x30D3f40B24c35758aE896390AfCEDbe0Cc8a228D'
+// ── Filled after deploy — update after running: npx hardhat run scripts/deploy.cjs --network minato
+// Can also be set via VITE_CONTRACT_ADDRESS env var in .env
+export const ROCKET_CRASH_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000'
 
 export const ROCKET_CRASH_ABI = [
   {
@@ -11,8 +12,7 @@ export const ROCKET_CRASH_ABI = [
     "anonymous": false,
     "inputs": [
       { "indexed": true,  "name": "player",    "type": "address" },
-      { "indexed": false, "name": "amount",    "type": "uint256" },
-      { "indexed": false, "name": "timestamp", "type": "uint256" }
+      { "indexed": false, "name": "amount",    "type": "uint256" }
     ],
     "name": "BetPlaced",
     "type": "event"
@@ -20,12 +20,12 @@ export const ROCKET_CRASH_ABI = [
   {
     "anonymous": false,
     "inputs": [
-      { "indexed": true,  "name": "player",      "type": "address" },
-      { "indexed": false, "name": "betAmount",   "type": "uint256" },
-      { "indexed": false, "name": "multX100",    "type": "uint256" },
-      { "indexed": false, "name": "payout",      "type": "uint256" }
+      { "indexed": true,  "name": "player",    "type": "address" },
+      { "indexed": false, "name": "betAmount", "type": "uint256" },
+      { "indexed": false, "name": "multX100",  "type": "uint256" },
+      { "indexed": false, "name": "payout",    "type": "uint256" }
     ],
-    "name": "CashedOut",
+    "name": "Payout",
     "type": "event"
   },
   {
@@ -45,15 +45,29 @@ export const ROCKET_CRASH_ABI = [
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "cashOut",
+    "inputs": [
+      { "name": "player",    "type": "address" },
+      { "name": "betAmount", "type": "uint256" },
+      { "name": "multX100",  "type": "uint256" }
+    ],
+    "name": "payout",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
-    "inputs": [{ "name": "player", "type": "address" }],
-    "name": "expireRound",
+    "inputs": [
+      { "name": "player",    "type": "address" },
+      { "name": "betAmount", "type": "uint256" }
+    ],
+    "name": "registerCrash",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "name": "amount", "type": "uint256" }],
+    "name": "withdraw",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -62,13 +76,6 @@ export const ROCKET_CRASH_ABI = [
     "inputs": [],
     "name": "getBalance",
     "outputs": [{ "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "owner",
-    "outputs": [{ "name": "", "type": "address" }],
     "stateMutability": "view",
     "type": "function"
   },
