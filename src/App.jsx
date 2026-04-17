@@ -53,21 +53,21 @@ export default function App() {
     if (!res.ok) throw new Error((await res.json()).error || 'api/bet failed')
   }
 
-  async function apiCashout(player, multX100) {
+  async function apiCashout(player, betAmount, multX100) {
     const res = await fetch('/api/cashout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ player, multX100 }),
+      body: JSON.stringify({ player, betAmount: String(betAmount), multX100 }),
     })
     if (!res.ok) throw new Error((await res.json()).error || 'api/cashout failed')
     return res.json()
   }
 
-  async function apiCrash(player) {
+  async function apiCrash(player, betAmount) {
     await fetch('/api/crash', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ player }),
+      body: JSON.stringify({ player, betAmount: String(betAmount) }),
     }).catch(err => console.warn('api/crash failed:', err))
   }
 
@@ -284,7 +284,7 @@ export default function App() {
       setProfit(p => p - betAmount)
       setHistory(h => [{ mult: g.currentMult, won: false }, ...h].slice(0, 15))
       // Tell backend to call registerCrash() on-chain
-      apiCrash(address)
+      apiCrash(address, betAmount)
       setTimeout(() => refetchBalance(), 4000)
     }
 
@@ -367,7 +367,7 @@ export default function App() {
 
     try {
       const multX100 = Math.round(mult * 100)
-      const result = await apiCashout(address, multX100)
+      const result = await apiCashout(address, betAmount, multX100)
       setStatusMsg(`✅ +${netGain.toFixed(4)} ETH at ${mult.toFixed(2)}x`)
       // Balance will update after the on-chain tx confirms
       setTimeout(() => refetchBalance(), 4000)
