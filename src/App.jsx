@@ -1,4 +1,4 @@
-import cometLogo from './assets/comet-logo.png'
+import cometLogo from './assets/comet-logo-white.png'
 import { usePrivy, useWallets } from '@privy-io/react-auth'
 import { useBalance, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi'
 import { parseEther, formatEther } from 'viem'
