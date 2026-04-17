@@ -122,9 +122,9 @@ export default function App() {
 
     ctx.clearRect(0, 0, W, H)
     const bg = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W,H) * 0.8)
-    bg.addColorStop(0, '#0F2040')
-    bg.addColorStop(1, 'rgba(8,16,31,0)')
-    ctx.fillStyle = '#08101F'; ctx.fillRect(0, 0, W, H)
+    bg.addColorStop(0, 'rgba(10,14,28,0.90)')
+    bg.addColorStop(1, 'rgba(0,0,0,0)')
+    ctx.fillStyle = '#03040a'; ctx.fillRect(0, 0, W, H)
     ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H)
 
     // Stars
@@ -433,7 +433,7 @@ export default function App() {
   const isCrash  = gameState === 'crashed'
   const isCashed = gameState === 'cashed'
 
-  const multColor = isCrash ? '#f87171' : isCashed ? '#00E5C8' : isFlying ? '#00C2FF' : '#4d7aaa'
+  const multColor = isCrash ? '#d95c5c' : isCashed ? '#3dcfb0' : isFlying ? '#5ba3d9' : '#2e4a66'
 
   return (
     <>
@@ -446,7 +446,7 @@ export default function App() {
           {authenticated && address ? (
             <>
               <div style={styles.walletInfo}>
-                <span style={styles.walletBal}>{balEth} <span style={{ color: '#00C2FF', fontSize: '0.7rem' }}>ETH</span></span>
+                <span style={styles.walletBal}>{balEth} <span style={{ color: '#5ba3d9', fontSize: '0.7rem' }}>ETH</span></span>
                 <span style={styles.walletAddr2}>{address.slice(0, 6)}…{address.slice(-4)}</span>
               </div>
               <button onClick={() => setShowDeposit(true)} style={styles.btnDeposit}>+ Deposit</button>
@@ -469,14 +469,14 @@ export default function App() {
             </div>
 
             <p style={styles.modalSubtitle}>
-              Send ETH from your game wallet to any external address on <b style={{ color: '#00C2FF' }}>Soneium Minato</b>.
+              Send ETH from your game wallet to any external address on <b style={{ color: '#5ba3d9' }}>Soneium Minato</b>.
             </p>
 
             {/* From */}
             <div style={styles.withdrawLabel}>FROM</div>
             <div style={{ ...styles.addrBox, marginBottom: 12 }}>
               <span style={styles.addrText}>{address}</span>
-              <span style={{ fontSize: '0.7rem', color: '#4ade80', whiteSpace: 'nowrap' }}>{balEth} ETH</span>
+              <span style={{ fontSize: '0.7rem', color: '#3dcfb0', whiteSpace: 'nowrap' }}>{balEth} ETH</span>
             </div>
 
             {/* To */}
@@ -537,7 +537,7 @@ export default function App() {
               <button onClick={() => setShowDeposit(false)} style={styles.modalClose}>✕</button>
             </div>
 
-            <p style={styles.modalSubtitle}>Send ETH from any wallet to your game address on <b style={{ color: '#00C2FF' }}>Soneium Minato</b> testnet:</p>
+            <p style={styles.modalSubtitle}>Send ETH from any wallet to your game address on <b style={{ color: '#5ba3d9' }}>Soneium Minato</b> testnet:</p>
 
             {/* Address box */}
             <div style={styles.addrBox}>
@@ -558,7 +558,7 @@ export default function App() {
               </div>
               <div style={styles.modalStep}>
                 <span style={styles.stepNum}>3</span>
-                <span>Make sure you're on the <b style={{ color: '#00C2FF' }}>Soneium Minato (Chain ID: 1946)</b> network</span>
+                <span>Make sure you're on the <b style={{ color: '#5ba3d9' }}>Soneium Minato (Chain ID: 1946)</b> network</span>
               </div>
               <div style={styles.modalStep}>
                 <span style={styles.stepNum}>4</span>
@@ -594,16 +594,16 @@ export default function App() {
 
         {/* Crash banner */}
         {isCrash && (
-          <div style={{ ...styles.banner, background: 'rgba(239,68,68,0.15)' }}>
-            <div style={{ ...styles.bannerBig, color: '#f87171' }}>💥 ROCKET CRASHED!</div>
+          <div style={{ ...styles.banner, background: 'rgba(217,92,92,0.10)' }}>
+            <div style={{ ...styles.bannerBig, color: '#d95c5c' }}>💥 ROCKET CRASHED!</div>
             <div style={styles.bannerSmall}>Crashed at {currentMult.toFixed(2)}x</div>
           </div>
         )}
 
         {/* Cash banner */}
         {isCashed && (
-          <div style={{ ...styles.banner, background: 'rgba(34,197,94,0.12)' }}>
-            <div style={{ ...styles.bannerBig, color: '#4ade80' }}>✅ CASHED OUT!</div>
+          <div style={{ ...styles.banner, background: 'rgba(61,207,176,0.10)' }}>
+            <div style={{ ...styles.bannerBig, color: '#3dcfb0' }}>✅ CASHED OUT!</div>
             <div style={styles.bannerSmall}>{statusMsg}</div>
           </div>
         )}
@@ -624,7 +624,7 @@ export default function App() {
               value={BET_VALUES.indexOf(betAmount) + 1}
               onChange={e => setBetAmount(BET_VALUES[e.target.value - 1])}
               disabled={isFlying}
-              style={{ accentColor: '#00C2FF', cursor: 'pointer', width: '100%' }}
+              style={{ accentColor: '#5ba3d9', cursor: 'pointer', width: '100%' }}
             />
             <span style={styles.valDisplay}>{betAmount.toFixed(3)} ETH</span>
           </div>
@@ -661,80 +661,91 @@ export default function App() {
 }
 
 // ─────────────────────────────────────────────────────────
-//  STYLES  —  Comet brand palette
-//  Primary cyan:  #00C2FF  /  #0070D2
-//  Dark navy bg:  #08101F  /  #0D1A2E
-//  Card surface:  #0F2040
-//  Border:        #1A3560
-//  Accent teal:   #00E5C8
+//  STYLES  —  Comet "Void Trajectory" palette
+//
+//  Background:    #000000  (true black — banner blends in)
+//  Surface dark:  #0a0c14  (card bg, very dark navy-black)
+//  Surface mid:   #0e1220  (inputs, inner boxes)
+//  Border:        rgba(90,130,200,0.18)  (cold blue hairline)
+//  Text primary:  #c8dff5  (cool off-white)
+//  Text muted:    #4a6a90  (slate blue)
+//  Accent blue:   #5ba3d9  (icy blue — from the ring)
+//  Accent amber:  #c8873a  (comet tail amber)
+//  Win green:     #3dcfb0  (teal, slightly desaturated)
+//  Crash red:     #d95c5c
 // ─────────────────────────────────────────────────────────
 const styles = {
-  // ── Header banner
-  headerWrap:   { width: '100%', maxWidth: 680, position: 'relative', marginBottom: 16, borderRadius: 16, overflow: 'hidden' },
-  headerBanner: { width: '100%', display: 'block', objectFit: 'cover', borderRadius: 16 },
-  walletOverlay:{ position: 'absolute', top: 10, right: 10, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(6,12,28,0.82)', backdropFilter: 'blur(8px)', border: '1px solid rgba(0,194,255,0.2)', borderRadius: 12, padding: '6px 10px' },
+  // ── Header banner — no border radius, bleeds into black bg
+  headerWrap:   { width: '100%', maxWidth: 680, position: 'relative', marginBottom: 0, overflow: 'hidden' },
+  headerBanner: { width: '100%', display: 'block', objectFit: 'cover' },
+  walletOverlay:{ position: 'absolute', top: 10, right: 10, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(10px)', border: '1px solid rgba(90,130,200,0.22)', borderRadius: 10, padding: '6px 10px' },
 
-  // ── Wallet widget (top right)
-  walletWidget: { display: 'flex', alignItems: 'center', gap: 8, background: '#0F2040', border: '1px solid #1A3560', borderRadius: 14, padding: '8px 12px' },
+  // ── Wallet widget
   walletInfo:   { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 },
-  walletBal:    { fontSize: '0.95rem', fontWeight: 700, color: '#a8d4ff' },
-  walletAddr2:  { fontSize: '0.65rem', color: '#3a5c80', fontFamily: 'monospace' },
-  btnDeposit:   { padding: '6px 12px', background: 'linear-gradient(135deg,#00C2FF,#0070D2)', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: '0.78rem', whiteSpace: 'nowrap' },
-  btnWithdraw:  { padding: '6px 12px', background: 'linear-gradient(135deg,#00E5C8,#0099B8)', color: '#08101F', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: '0.78rem', whiteSpace: 'nowrap' },
-  withdrawLabel:{ fontSize: '0.65rem', letterSpacing: 1.5, color: '#4d7aaa', marginBottom: 6, textTransform: 'uppercase' },
-  withdrawInput:{ width: '100%', background: '#0D1A2E', border: '1px solid #1A3560', borderRadius: 10, padding: '10px 14px', color: '#d0eaff', fontSize: '0.85rem', outline: 'none', marginBottom: 4, fontFamily: 'monospace', boxSizing: 'border-box' },
+  walletBal:    { fontSize: '0.92rem', fontWeight: 700, color: '#c8dff5' },
+  walletAddr2:  { fontSize: '0.62rem', color: '#2e4a66', fontFamily: 'monospace' },
+  btnDeposit:   { padding: '6px 12px', background: 'rgba(91,163,217,0.15)', color: '#5ba3d9', border: '1px solid rgba(91,163,217,0.35)', borderRadius: 7, fontWeight: 700, cursor: 'pointer', fontSize: '0.76rem', whiteSpace: 'nowrap', letterSpacing: 0.3 },
+  btnWithdraw:  { padding: '6px 12px', background: 'rgba(200,135,58,0.15)', color: '#c8873a', border: '1px solid rgba(200,135,58,0.35)', borderRadius: 7, fontWeight: 700, cursor: 'pointer', fontSize: '0.76rem', whiteSpace: 'nowrap', letterSpacing: 0.3 },
+  withdrawLabel:{ fontSize: '0.63rem', letterSpacing: 1.8, color: '#4a6a90', marginBottom: 6, textTransform: 'uppercase' },
+  withdrawInput:{ width: '100%', background: '#0e1220', border: '1px solid rgba(90,130,200,0.18)', borderRadius: 9, padding: '10px 14px', color: '#c8dff5', fontSize: '0.85rem', outline: 'none', marginBottom: 4, fontFamily: 'monospace', boxSizing: 'border-box' },
   amtRow:       { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 },
-  btnMax:       { padding: '10px 14px', background: 'rgba(0,194,255,0.12)', border: '1px solid rgba(0,194,255,0.3)', color: '#00C2FF', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem' },
-  withdrawStatus:{ fontSize: '0.82rem', padding: '8px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: 8, marginTop: 8, marginBottom: 4, color: '#d0eaff' },
-  btnWithdrawSend:{ width: '100%', marginTop: 14, padding: '14px', background: 'linear-gradient(135deg,#00C2FF,#0070D2)', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 800, fontSize: '1rem', cursor: 'pointer', letterSpacing: 1 },
+  btnMax:       { padding: '10px 14px', background: 'rgba(91,163,217,0.10)', border: '1px solid rgba(91,163,217,0.28)', color: '#5ba3d9', borderRadius: 9, fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem' },
+  withdrawStatus:{ fontSize: '0.82rem', padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: 8, marginTop: 8, marginBottom: 4, color: '#c8dff5' },
+  btnWithdrawSend:{ width: '100%', marginTop: 14, padding: '14px', background: 'rgba(91,163,217,0.18)', color: '#5ba3d9', border: '1px solid rgba(91,163,217,0.40)', borderRadius: 11, fontWeight: 800, fontSize: '1rem', cursor: 'pointer', letterSpacing: 1 },
 
-  // ── Deposit modal
-  modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 16 },
-  modalBox:     { background: '#0F2040', border: '1px solid #1A3560', borderRadius: 20, padding: 28, width: '100%', maxWidth: 480 },
+  // ── Modals
+  modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 16 },
+  modalBox:     { background: '#0a0c14', border: '1px solid rgba(90,130,200,0.18)', borderRadius: 18, padding: 28, width: '100%', maxWidth: 480 },
   modalHeader:  { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  modalTitle:   { fontSize: '1.2rem', fontWeight: 800, color: '#fff' },
-  modalClose:   { background: 'none', border: 'none', color: '#3a5c80', fontSize: '1.1rem', cursor: 'pointer' },
-  modalSubtitle:{ fontSize: '0.82rem', color: '#7aaac8', marginBottom: 18, lineHeight: 1.5 },
-  addrBox:      { display: 'flex', alignItems: 'center', gap: 8, background: '#0D1A2E', borderRadius: 10, padding: '10px 14px', marginBottom: 20 },
-  addrText:     { fontSize: '0.72rem', fontFamily: 'monospace', color: '#a8d4ff', flex: 1, wordBreak: 'break-all' },
-  btnCopy:      { padding: '6px 14px', background: 'linear-gradient(135deg,#00C2FF,#0070D2)', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: '0.75rem', whiteSpace: 'nowrap' },
+  modalTitle:   { fontSize: '1.15rem', fontWeight: 800, color: '#c8dff5', letterSpacing: 0.5 },
+  modalClose:   { background: 'none', border: 'none', color: '#2e4a66', fontSize: '1.1rem', cursor: 'pointer' },
+  modalSubtitle:{ fontSize: '0.80rem', color: '#4a6a90', marginBottom: 18, lineHeight: 1.6 },
+  addrBox:      { display: 'flex', alignItems: 'center', gap: 8, background: '#0e1220', borderRadius: 9, padding: '10px 14px', marginBottom: 20, border: '1px solid rgba(90,130,200,0.12)' },
+  addrText:     { fontSize: '0.70rem', fontFamily: 'monospace', color: '#8ab4d4', flex: 1, wordBreak: 'break-all' },
+  btnCopy:      { padding: '6px 14px', background: 'rgba(91,163,217,0.14)', color: '#5ba3d9', border: '1px solid rgba(91,163,217,0.32)', borderRadius: 7, fontWeight: 700, cursor: 'pointer', fontSize: '0.74rem', whiteSpace: 'nowrap' },
   modalSteps:   { display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 },
-  modalStep:    { display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: '0.8rem', color: '#7aaac8', lineHeight: 1.5 },
-  stepNum:      { background: '#0D1A2E', color: '#00C2FF', borderRadius: 999, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.75rem', flexShrink: 0 },
-  modalLink:    { color: '#00C2FF', textDecoration: 'none' },
-  explorerBtn:  { display: 'block', textAlign: 'center', padding: '10px', background: 'rgba(0,194,255,0.08)', border: '1px solid rgba(0,194,255,0.2)', borderRadius: 10, color: '#00C2FF', textDecoration: 'none', fontSize: '0.8rem' },
+  modalStep:    { display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: '0.80rem', color: '#4a6a90', lineHeight: 1.6 },
+  stepNum:      { background: '#0e1220', color: '#5ba3d9', borderRadius: 999, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.72rem', flexShrink: 0, border: '1px solid rgba(91,163,217,0.25)' },
+  modalLink:    { color: '#5ba3d9', textDecoration: 'none' },
+  explorerBtn:  { display: 'block', textAlign: 'center', padding: '10px', background: 'rgba(91,163,217,0.06)', border: '1px solid rgba(91,163,217,0.18)', borderRadius: 9, color: '#5ba3d9', textDecoration: 'none', fontSize: '0.78rem', letterSpacing: 0.3 },
 
-  label:        { fontSize: '0.7rem', color: '#4d7aaa', letterSpacing: 1 },
-  amount:       { fontSize: '1.1rem', fontWeight: 700, color: '#a8d4ff' },
+  label:        { fontSize: '0.7rem', color: '#4a6a90', letterSpacing: 1 },
+  amount:       { fontSize: '1.1rem', fontWeight: 700, color: '#c8dff5' },
   profitTag:    { fontSize: '0.8rem', fontWeight: 700, padding: '2px 10px', borderRadius: 999 },
-  profitPos:    { background: 'rgba(0,229,200,0.15)', color: '#00E5C8' },
-  profitNeg:    { background: 'rgba(239,68,68,0.15)', color: '#f87171' },
-  btnSmall:     { padding: '6px 10px', background: 'rgba(255,255,255,0.05)', color: '#7aaac8', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, cursor: 'pointer', fontSize: '0.72rem' },
-  btnLogin:     { padding: '10px 20px', background: 'linear-gradient(135deg,#00C2FF,#0070D2)', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: '0.9rem' },
-  walletAddr:   { fontSize: '0.75rem', color: '#3a5c80', fontFamily: 'monospace' },
-  explorerLink: { fontSize: '0.72rem', color: '#00C2FF', textDecoration: 'none' },
-  faucetLink:   { fontSize: '0.72rem', color: '#00E5C8', textDecoration: 'none' },
-  gameWrap:    { width: '100%', maxWidth: 680, background: '#0F2040', border: '1px solid #1A3560', borderRadius: 20, overflow: 'hidden', position: 'relative', marginBottom: 20 },
+  profitPos:    { background: 'rgba(61,207,176,0.12)', color: '#3dcfb0' },
+  profitNeg:    { background: 'rgba(217,92,92,0.12)', color: '#d95c5c' },
+  btnSmall:     { padding: '6px 10px', background: 'rgba(255,255,255,0.03)', color: '#4a6a90', border: '1px solid rgba(90,130,200,0.14)', borderRadius: 7, cursor: 'pointer', fontSize: '0.72rem' },
+  btnLogin:     { padding: '10px 20px', background: 'rgba(91,163,217,0.16)', color: '#5ba3d9', border: '1px solid rgba(91,163,217,0.38)', borderRadius: 9, fontWeight: 800, cursor: 'pointer', fontSize: '0.9rem', letterSpacing: 0.5 },
+  walletAddr:   { fontSize: '0.75rem', color: '#2e4a66', fontFamily: 'monospace' },
+  explorerLink: { fontSize: '0.72rem', color: '#5ba3d9', textDecoration: 'none' },
+  faucetLink:   { fontSize: '0.72rem', color: '#c8873a', textDecoration: 'none' },
+
+  // ── Game area
+  gameWrap:    { width: '100%', maxWidth: 680, background: '#040608', border: '1px solid rgba(90,130,200,0.14)', borderTop: 'none', borderRadius: '0 0 16px 16px', overflow: 'hidden', position: 'relative', marginBottom: 16 },
   canvas:      { display: 'block', width: '100%', height: 320 },
   multDisplay: { position: 'absolute', left: '50%', transform: 'translateX(-50%)', textAlign: 'center', pointerEvents: 'none', transition: 'top 0.35s ease' },
   multValue:   { fontSize: '4.5rem', fontWeight: 900, lineHeight: 1, textShadow: '0 0 40px currentColor', transition: 'color 0.2s' },
-  multLabel:   { fontSize: '0.72rem', letterSpacing: 3, opacity: 0.55, marginTop: 6, textTransform: 'uppercase' },
+  multLabel:   { fontSize: '0.70rem', letterSpacing: 3.5, opacity: 0.45, marginTop: 6, textTransform: 'uppercase' },
   banner:      { display: 'flex', position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 6 },
   bannerBig:   { fontSize: '2rem', fontWeight: 900 },
-  bannerSmall: { fontSize: '0.85rem', color: '#d0eaff' },
-  statusMsg:   { width: '100%', maxWidth: 680, textAlign: 'center', fontSize: '0.85rem', color: '#7aaac8', marginBottom: 8 },
-  panel:       { width: '100%', maxWidth: 680, background: '#0F2040', border: '1px solid #1A3560', borderRadius: 16, padding: '20px 24px', marginBottom: 16 },
+  bannerSmall: { fontSize: '0.85rem', color: '#8ab4d4' },
+  statusMsg:   { width: '100%', maxWidth: 680, textAlign: 'center', fontSize: '0.83rem', color: '#4a6a90', marginBottom: 8 },
+
+  // ── Controls panel
+  panel:       { width: '100%', maxWidth: 680, background: '#0a0c14', border: '1px solid rgba(90,130,200,0.14)', borderRadius: 14, padding: '20px 24px', marginBottom: 14 },
   panelRow:    { display: 'flex', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap' },
   field:       { display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minWidth: 140 },
-  fieldLabel:  { fontSize: '0.7rem', letterSpacing: '1.5px', color: '#4d7aaa', textTransform: 'uppercase' },
-  valDisplay:  { fontSize: '1rem', fontWeight: 700, color: '#00C2FF' },
-  btn:         { padding: '14px 28px', border: 'none', borderRadius: 12, fontSize: '1rem', fontWeight: 800, cursor: 'pointer', letterSpacing: 1, flex: 1, minWidth: 140 },
-  btnBet:      { background: 'linear-gradient(135deg,#00C2FF,#0070D2)', color: '#fff' },
-  btnCashout:  { background: 'linear-gradient(135deg,#00E5C8,#00A896)', color: '#08101F' },
+  fieldLabel:  { fontSize: '0.68rem', letterSpacing: '1.8px', color: '#4a6a90', textTransform: 'uppercase' },
+  valDisplay:  { fontSize: '1rem', fontWeight: 700, color: '#5ba3d9' },
+  btn:         { padding: '14px 28px', border: 'none', borderRadius: 11, fontSize: '1rem', fontWeight: 800, cursor: 'pointer', letterSpacing: 0.8, flex: 1, minWidth: 140 },
+  btnBet:      { background: 'rgba(91,163,217,0.16)', color: '#5ba3d9', border: '1px solid rgba(91,163,217,0.40)' },
+  btnCashout:  { background: 'rgba(200,135,58,0.16)', color: '#c8873a', border: '1px solid rgba(200,135,58,0.40)' },
+
+  // ── History
   historyWrap: { width: '100%', maxWidth: 680 },
-  historyTitle:{ fontSize: '0.7rem', letterSpacing: 2, color: '#4d7aaa', textTransform: 'uppercase', marginBottom: 8 },
-  historyList: { display: 'flex', gap: 8, flexWrap: 'wrap' },
-  historyChip: { padding: '4px 10px', borderRadius: 999, fontSize: '0.78rem', fontWeight: 700 },
-  chipWin:     { background: 'rgba(0,229,200,0.15)', color: '#00E5C8', border: '1px solid rgba(0,229,200,0.3)' },
-  chipLose:    { background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' },
+  historyTitle:{ fontSize: '0.68rem', letterSpacing: 2.5, color: '#2e4a66', textTransform: 'uppercase', marginBottom: 8 },
+  historyList: { display: 'flex', gap: 6, flexWrap: 'wrap' },
+  historyChip: { padding: '4px 10px', borderRadius: 999, fontSize: '0.76rem', fontWeight: 700 },
+  chipWin:     { background: 'rgba(61,207,176,0.10)', color: '#3dcfb0', border: '1px solid rgba(61,207,176,0.22)' },
+  chipLose:    { background: 'rgba(217,92,92,0.10)', color: '#d95c5c', border: '1px solid rgba(217,92,92,0.22)' },
 }
