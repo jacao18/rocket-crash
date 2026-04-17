@@ -1,4 +1,5 @@
 import cometLogo from './assets/comet-logo-white.png'
+import cometBanner from './assets/comet-header-banner.png'
 import { usePrivy, useWallets } from '@privy-io/react-auth'
 import { useBalance, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi'
 import { parseEther, formatEther } from 'viem'
@@ -436,19 +437,16 @@ export default function App() {
 
   return (
     <>
-      {/* ── TOP BAR ── */}
-      <div style={styles.topBar}>
-        <div style={styles.topLeft}>
-          <img src={cometLogo} alt="Comet" style={styles.brandLogo} />
-          <p style={styles.subtitle}>ROCKET CRASH · SONEIUM MINATO TESTNET</p>
-        </div>
+      {/* ── HEADER BANNER ── */}
+      <div style={styles.headerWrap}>
+        <img src={cometBanner} alt="Comet Rocket Crash" style={styles.headerBanner} />
 
-        {/* Wallet widget — top right */}
-        <div style={styles.walletWidget}>
+        {/* Wallet widget — overlaid top right */}
+        <div style={styles.walletOverlay}>
           {authenticated && address ? (
             <>
               <div style={styles.walletInfo}>
-                <span style={styles.walletBal}>{balEth} <span style={{ color: '#818cf8', fontSize: '0.7rem' }}>ETH</span></span>
+                <span style={styles.walletBal}>{balEth} <span style={{ color: '#00C2FF', fontSize: '0.7rem' }}>ETH</span></span>
                 <span style={styles.walletAddr2}>{address.slice(0, 6)}…{address.slice(-4)}</span>
               </div>
               <button onClick={() => setShowDeposit(true)} style={styles.btnDeposit}>+ Deposit</button>
@@ -671,11 +669,10 @@ export default function App() {
 //  Accent teal:   #00E5C8
 // ─────────────────────────────────────────────────────────
 const styles = {
-  // ── Top bar
-  topBar:       { width: '100%', maxWidth: 680, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
-  topLeft:      { display: 'flex', flexDirection: 'column', gap: 4 },
-  brandLogo:    { height: 52, width: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 0 8px rgba(0,194,255,0.35))' },
-  subtitle:     { fontSize: '0.68rem', color: '#4d7aaa', letterSpacing: 1.5, textTransform: 'uppercase' },
+  // ── Header banner
+  headerWrap:   { width: '100%', maxWidth: 680, position: 'relative', marginBottom: 16, borderRadius: 16, overflow: 'hidden' },
+  headerBanner: { width: '100%', display: 'block', objectFit: 'cover', borderRadius: 16 },
+  walletOverlay:{ position: 'absolute', top: 10, right: 10, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(6,12,28,0.82)', backdropFilter: 'blur(8px)', border: '1px solid rgba(0,194,255,0.2)', borderRadius: 12, padding: '6px 10px' },
 
   // ── Wallet widget (top right)
   walletWidget: { display: 'flex', alignItems: 'center', gap: 8, background: '#0F2040', border: '1px solid #1A3560', borderRadius: 14, padding: '8px 12px' },
