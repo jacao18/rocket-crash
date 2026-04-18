@@ -1,20 +1,44 @@
 import { useEffect, useState } from 'react'
-import { usePrivy, useWallets } from '@privy-io/react-auth'
 
 const OWNER = '0xd41D6fDD91d3c39d3AC29745f68548843598D572'.toLowerCase()
 const EXPLORER = 'https://explorer-testnet.soneium.org'
 
 export default function Admin() {
-  const { authenticated, login, ready } = usePrivy()
-  const { wallets } = useWallets()
+  const [address, setAddress] = useState(null)
+  const [connecting, setConnecting] = useState(false)
+  const [connError, setConnError] = useState('')
 
-  // Admin: prefer external wallet (MetaMask etc), fall back to any connected wallet
-  const externalWallet = wallets.find(w => w.walletClientType !== 'privy')
-  const anyWallet      = wallets[0]
-  const wallet         = externalWallet || anyWallet
-  const address        = wallet?.address
-
+  const authenticated = !!address
   const isOwner = address?.toLowerCase() === OWNER
+
+  async function login() {
+    setConnError('')
+    if (!window.ethereum) {
+      setConnError('No wallet detected. Install MetaMask, Rabby or another browser wallet.')
+      return
+    }
+    setConnecting(true)
+    try {
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
+      setAddress(accounts[0])
+    } catch (err) {
+      setConnError(err.message || 'Connection rejected.')
+    } finally {
+      setConnecting(false)
+    }
+  }
+
+  // Auto-reconnect if already connected
+  useEffect(() => {
+    if (!window.ethereum) return
+    window.ethereum.request({ method: 'eth_accounts' })
+      .then(accounts => { if (accounts[0]) setAddress(accounts[0]) })
+      .catch(() => {})
+
+    const onAccountsChanged = (accounts) => setAddress(accounts[0] || null)
+    window.ethereum.on('accountsChanged', onAccountsChanged)
+    return () => window.ethereum.removeListener('accountsChanged', onAccountsChanged)
+  }, [])
 
   const [stats, setStats]       = useState(null)
   const [loading, setLoading]   = useState(false)
@@ -44,11 +68,6 @@ export default function Admin() {
     if (isOwner) fetchStats()
   }, [isOwner, address])
 
-  // ── Not ready yet
-  if (!ready) {
-    return <div style={s.center}><div style={s.spinner}>Loading…</div></div>
-  }
-
   // ── Not logged in
   if (!authenticated) {
     return (
@@ -59,13 +78,12 @@ export default function Admin() {
           <div style={s.sub}>
             Connect with the <b style={{ color: '#5ba3d9' }}>owner wallet</b> to access the dashboard.
           </div>
-          <button onClick={login} style={s.btnWallet}>
+          <button onClick={login} disabled={connecting} style={s.btnWallet}>
             <span style={s.walletIcon}>🦊</span>
-            Connect Wallet
+            {connecting ? 'Connecting…' : 'Connect Wallet'}
           </button>
-          <div style={s.hint}>
-            MetaMask, WalletConnect or any injected wallet
-          </div>
+          {connError && <div style={s.connError}>{connError}</div>}
+          <div style={s.hint}>Rabby, MetaMask, or any browser wallet</div>
         </div>
       </div>
     )
@@ -244,6 +262,7 @@ const s = {
   btnWallet:   { padding: '14px 28px', background: 'rgba(91,163,217,0.14)', color: '#5ba3d9', border: '1px solid rgba(91,163,217,0.40)', borderRadius: 12, fontWeight: 800, cursor: 'pointer', fontSize: '1rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, letterSpacing: 0.5 },
   walletIcon:  { fontSize: '1.3rem' },
   hint:        { marginTop: 12, fontSize: '0.72rem', color: '#2e4a66', textAlign: 'center' },
+  connError:   { marginTop: 10, fontSize: '0.78rem', color: '#d95c5c', textAlign: 'center', lineHeight: 1.5 },
   btnSecondary:{ padding: '8px 16px', background: 'rgba(255,255,255,0.04)', color: '#4a6a90', border: '1px solid rgba(90,130,200,0.14)', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: '0.78rem', textDecoration: 'none', display: 'inline-block' },
   btnRefresh:  { padding: '8px 16px', background: 'rgba(91,163,217,0.10)', color: '#5ba3d9', border: '1px solid rgba(91,163,217,0.25)', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: '0.78rem' },
 }
