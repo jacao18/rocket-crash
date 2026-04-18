@@ -39,7 +39,7 @@ export function Providers({ children }) {
           theme: 'dark',
           accentColor: isAdmin ? '#5ba3d9' : '#f97316',
           logo: 'https://rocket-crash-two.vercel.app/favicon.ico',
-          walletList: ['detected_wallets', 'metamask', 'wallet_connect', 'coinbase_wallet', 'rainbow'],
+          walletList: ['detected_wallets'],
         },
         embeddedWallets: {
           createOnLogin: isAdmin ? 'off' : 'users-without-wallets',
