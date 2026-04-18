@@ -1,6 +1,10 @@
+import { Buffer } from 'buffer'
+globalThis.Buffer = Buffer
+
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
+import Admin from './Admin.jsx'
 import { Providers } from './Providers.jsx'
 import './index.css'
 
@@ -16,10 +20,12 @@ if (!privyId) {
     </div>
   `
 } else {
+  const isAdmin = window.location.pathname === '/admin'
+
   ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
       <Providers>
-        <App />
+        {isAdmin ? <Admin /> : <App />}
       </Providers>
     </React.StrictMode>
   )
