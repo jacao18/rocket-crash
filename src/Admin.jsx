@@ -5,10 +5,14 @@ const OWNER = '0xd41D6fDD91d3c39d3AC29745f68548843598D572'.toLowerCase()
 const EXPLORER = 'https://explorer-testnet.soneium.org'
 
 export default function Admin() {
-  const { authenticated, login } = usePrivy()
+  const { authenticated, login, ready } = usePrivy()
   const { wallets } = useWallets()
-  const embeddedWallet = wallets.find(w => w.walletClientType === 'privy')
-  const address = embeddedWallet?.address
+
+  // Admin: prefer external wallet (MetaMask etc), fall back to any connected wallet
+  const externalWallet = wallets.find(w => w.walletClientType !== 'privy')
+  const anyWallet      = wallets[0]
+  const wallet         = externalWallet || anyWallet
+  const address        = wallet?.address
 
   const isOwner = address?.toLowerCase() === OWNER
 
@@ -40,6 +44,11 @@ export default function Admin() {
     if (isOwner) fetchStats()
   }, [isOwner, address])
 
+  // ── Not ready yet
+  if (!ready) {
+    return <div style={s.center}><div style={s.spinner}>Loading…</div></div>
+  }
+
   // ── Not logged in
   if (!authenticated) {
     return (
@@ -47,8 +56,16 @@ export default function Admin() {
         <div style={s.card}>
           <div style={s.logo}>🛰️</div>
           <div style={s.title}>Admin Dashboard</div>
-          <div style={s.sub}>Sign in with your owner wallet to continue.</div>
-          <button onClick={login} style={s.btnPrimary}>Sign in with Google</button>
+          <div style={s.sub}>
+            Connect with the <b style={{ color: '#5ba3d9' }}>owner wallet</b> to access the dashboard.
+          </div>
+          <button onClick={login} style={s.btnWallet}>
+            <span style={s.walletIcon}>🦊</span>
+            Connect Wallet
+          </button>
+          <div style={s.hint}>
+            MetaMask, WalletConnect or any injected wallet
+          </div>
         </div>
       </div>
     )
@@ -224,6 +241,9 @@ const s = {
   link:        { color: '#5ba3d9', textDecoration: 'none' },
 
   btnPrimary:  { padding: '12px 28px', background: 'rgba(91,163,217,0.16)', color: '#5ba3d9', border: '1px solid rgba(91,163,217,0.40)', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: '0.9rem', width: '100%' },
+  btnWallet:   { padding: '14px 28px', background: 'rgba(91,163,217,0.14)', color: '#5ba3d9', border: '1px solid rgba(91,163,217,0.40)', borderRadius: 12, fontWeight: 800, cursor: 'pointer', fontSize: '1rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, letterSpacing: 0.5 },
+  walletIcon:  { fontSize: '1.3rem' },
+  hint:        { marginTop: 12, fontSize: '0.72rem', color: '#2e4a66', textAlign: 'center' },
   btnSecondary:{ padding: '8px 16px', background: 'rgba(255,255,255,0.04)', color: '#4a6a90', border: '1px solid rgba(90,130,200,0.14)', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: '0.78rem', textDecoration: 'none', display: 'inline-block' },
   btnRefresh:  { padding: '8px 16px', background: 'rgba(91,163,217,0.10)', color: '#5ba3d9', border: '1px solid rgba(91,163,217,0.25)', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: '0.78rem' },
 }

@@ -26,19 +26,23 @@ const wagmiConfig = createConfig({
 
 const queryClient = new QueryClient()
 
+const isAdmin = typeof window !== 'undefined' && window.location.pathname === '/admin'
+
 export function Providers({ children }) {
   return (
     <PrivyProvider
       appId={import.meta.env.VITE_PRIVY_APP_ID}
       config={{
-        loginMethods: ['google'],
+        // Admin uses external wallet; game uses Google + embedded wallet
+        loginMethods: isAdmin ? ['wallet'] : ['google'],
         appearance: {
           theme: 'dark',
-          accentColor: '#f97316',
+          accentColor: isAdmin ? '#5ba3d9' : '#f97316',
           logo: 'https://rocket-crash-two.vercel.app/favicon.ico',
+          walletList: ['metamask', 'wallet_connect', 'coinbase_wallet', 'rainbow'],
         },
         embeddedWallets: {
-          createOnLogin: 'users-without-wallets',
+          createOnLogin: isAdmin ? 'off' : 'users-without-wallets',
         },
         defaultChain: minatoTestnet,
         supportedChains: [minatoTestnet],
