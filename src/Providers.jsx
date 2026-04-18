@@ -2,6 +2,7 @@ import { PrivyProvider } from '@privy-io/react-auth'
 import { WagmiProvider, createConfig } from '@privy-io/wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { http, defineChain } from 'viem'
+import { mainnet } from 'viem/chains'
 
 // Soneium Minato Testnet
 export const minatoTestnet = defineChain({
@@ -18,9 +19,10 @@ export const minatoTestnet = defineChain({
 })
 
 const wagmiConfig = createConfig({
-  chains: [minatoTestnet],
+  chains: [minatoTestnet, mainnet],
   transports: {
     [minatoTestnet.id]: http(),
+    [mainnet.id]: http(),
   },
 })
 
@@ -39,13 +41,13 @@ export function Providers({ children }) {
           theme: 'dark',
           accentColor: isAdmin ? '#5ba3d9' : '#f97316',
           logo: 'https://rocket-crash-two.vercel.app/favicon.ico',
-          walletList: ['detected_wallets'],
+          walletList: ['detected_wallets', 'wallet_connect'],
         },
         embeddedWallets: {
           createOnLogin: isAdmin ? 'off' : 'users-without-wallets',
         },
         defaultChain: minatoTestnet,
-        supportedChains: [minatoTestnet],
+        supportedChains: [minatoTestnet, mainnet],
       }}
     >
       <QueryClientProvider client={queryClient}>
