@@ -37,11 +37,21 @@ export default async function handler(req, res) {
   try {
     const client = createPublicClient({ chain: minatoTestnet, transport: http() })
 
+    // Get current block, then scan only from DEPLOY_BLOCK onwards to avoid timeout
+    const latestBlock = await client.getBlockNumber()
+    // Deploy block — set to ~500 blocks before current as safe lower bound.
+    // Since the contract is new, all events will be within this window.
+    const DEPLOY_BLOCK = process.env.CONTRACT_DEPLOY_BLOCK
+      ? BigInt(process.env.CONTRACT_DEPLOY_BLOCK)
+      : latestBlock - 50000n  // ~2 days of blocks on Minato (~3s block time)
+
+    const fromBlock = DEPLOY_BLOCK > 0n ? DEPLOY_BLOCK : 0n
+
     // Fetch all logs in parallel
     const [betLogs, payoutLogs, crashLogs] = await Promise.all([
-      client.getLogs({ address: CONTRACT_ADDRESS, event: BET_PLACED_ABI, fromBlock: 0n, toBlock: 'latest' }),
-      client.getLogs({ address: CONTRACT_ADDRESS, event: PAYOUT_ABI,     fromBlock: 0n, toBlock: 'latest' }),
-      client.getLogs({ address: CONTRACT_ADDRESS, event: CRASHED_ABI,    fromBlock: 0n, toBlock: 'latest' }),
+      client.getLogs({ address: CONTRACT_ADDRESS, event: BET_PLACED_ABI, fromBlock, toBlock: 'latest' }),
+      client.getLogs({ address: CONTRACT_ADDRESS, event: PAYOUT_ABI,     fromBlock, toBlock: 'latest' }),
+      client.getLogs({ address: CONTRACT_ADDRESS, event: CRASHED_ABI,    fromBlock, toBlock: 'latest' }),
     ])
 
     // Aggregate stats
