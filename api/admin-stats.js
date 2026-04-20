@@ -17,9 +17,34 @@ const minatoTestnet = defineChain({
 const CONTRACT_ADDRESS = process.env.VITE_CONTRACT_ADDRESS || '0x03670B7279D0Db9f6207b6E79D17577f09Bfed0e'
 const OWNER_ADDRESS    = (process.env.OWNER_ADDRESS || '0xd41D6fDD91d3c39d3AC29745f68548843598D572').toLowerCase()
 
+// Cache deploy block in module scope so subsequent warm invocations skip binary search
+let _cachedDeployBlock = null
+
 const BET_PLACED_ABI = parseAbiItem('event BetPlaced(address indexed player, uint256 amount)')
 const PAYOUT_ABI     = parseAbiItem('event Payout(address indexed player, uint256 betAmount, uint256 multX100, uint256 payout)')
 const CRASHED_ABI    = parseAbiItem('event Crashed(address indexed player, uint256 betAmount)')
+
+// Binary search for the block where the contract was first deployed.
+// Checks if bytecode exists at a given block — O(log N) RPC calls.
+async function findDeployBlock(client, address) {
+  const latest = await client.getBlockNumber()
+  let lo = 0n, hi = latest
+
+  // Quick check: does code exist at latest? If not, contract doesn't exist yet.
+  const codeAtLatest = await client.getBytecode({ address, blockNumber: latest })
+  if (!codeAtLatest || codeAtLatest === '0x') return 0n
+
+  while (lo < hi) {
+    const mid = (lo + hi) / 2n
+    const code = await client.getBytecode({ address, blockNumber: mid })
+    if (code && code !== '0x') {
+      hi = mid
+    } else {
+      lo = mid + 1n
+    }
+  }
+  return lo
+}
 
 // Fetch block timestamps in batches to avoid overwhelming the RPC
 async function getBlockTimestamps(client, blockNumbers) {
@@ -55,10 +80,18 @@ export default async function handler(req, res) {
   try {
     const client = createPublicClient({ chain: minatoTestnet, transport: http() })
 
-    const latestBlock = await client.getBlockNumber()
-    const fromBlock   = process.env.CONTRACT_DEPLOY_BLOCK
-      ? BigInt(process.env.CONTRACT_DEPLOY_BLOCK)
-      : latestBlock - 50000n
+    // Find the deploy block — use env var if set, else binary search (cached in memory)
+    let fromBlock
+    if (process.env.CONTRACT_DEPLOY_BLOCK) {
+      fromBlock = BigInt(process.env.CONTRACT_DEPLOY_BLOCK)
+    } else if (_cachedDeployBlock !== null) {
+      fromBlock = _cachedDeployBlock
+    } else {
+      console.log('[admin-stats] searching for deploy block via binary search…')
+      fromBlock = await findDeployBlock(client, CONTRACT_ADDRESS)
+      _cachedDeployBlock = fromBlock
+      console.log('[admin-stats] deploy block found:', fromBlock.toString())
+    }
 
     // ── Fetch all event logs in parallel
     const [betLogs, payoutLogs, crashLogs] = await Promise.all([
@@ -163,6 +196,8 @@ export default async function handler(req, res) {
       .sort((a, b) => b.date.localeCompare(a.date)) // most recent first
 
     return res.status(200).json({
+      // Meta
+      deployBlock:     fromBlock.toString(),
       // Totals
       totalBets:       betLogs.length,
       totalWins:       payoutLogs.length,
