@@ -195,7 +195,7 @@ export default function Admin() {
                       <td style={{ ...s.td, color: '#c8dff5' }}>{parseFloat(d.volumeEth).toFixed(4)}</td>
                       <td style={{ ...s.td, color: '#3dcfb0' }}>{parseFloat(d.payoutsEth).toFixed(4)}</td>
                       <td style={{ ...s.td, color: parseFloat(d.profitEth) >= 0 ? '#c8873a' : '#d95c5c', fontWeight: 700 }}>
-                        {parseFloat(d.profitEth) >= 0 ? '+' : ''}{parseFloat(d.profitEth).toFixed(4)}
+                        {parseFloat(d.profitEth).toFixed(4)}
                       </td>
                     </tr>
                   )
@@ -212,7 +212,7 @@ export default function Admin() {
                   <td style={{ ...s.td, color: '#4a6a90', fontWeight: 700 }}>{stats.uniquePlayers}</td>
                   <td style={{ ...s.td, color: '#c8dff5', fontWeight: 700 }}>{parseFloat(stats.totalVolumeEth).toFixed(4)}</td>
                   <td style={{ ...s.td, color: '#3dcfb0', fontWeight: 700 }}>{parseFloat(stats.totalPayoutsEth).toFixed(4)}</td>
-                  <td style={{ ...s.td, color: '#c8873a', fontWeight: 800 }}>+{parseFloat(stats.houseProfitEth).toFixed(4)}</td>
+                  <td style={{ ...s.td, color: parseFloat(stats.houseProfitEth) >= 0 ? '#c8873a' : '#d95c5c', fontWeight: 800 }}>{parseFloat(stats.houseProfitEth).toFixed(4)}</td>
                 </tr>
               </tbody>
             </table>

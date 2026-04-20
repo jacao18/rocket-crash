@@ -145,7 +145,7 @@ export default async function handler(req, res) {
     // ── Total stats
     const totalVolume   = betLogs.reduce((acc, l) => acc + l.args.amount, 0n)
     const totalPayouts  = payoutLogs.reduce((acc, l) => acc + l.args.payout, 0n)
-    const houseProfit   = totalVolume > totalPayouts ? totalVolume - totalPayouts : 0n
+    const houseProfit   = totalVolume - totalPayouts  // can be negative
     const uniquePlayers = new Set(betLogs.map(l => l.args.player.toLowerCase())).size
 
     // ── Per-day stats (keyed by YYYY-MM-DD)
@@ -186,7 +186,7 @@ export default async function handler(req, res) {
         crashes:        d.crashes,
         volumeEth:      formatEther(d.volumeWei),
         payoutsEth:     formatEther(d.payoutsWei),
-        profitEth:      formatEther(d.volumeWei > d.payoutsWei ? d.volumeWei - d.payoutsWei : 0n),
+        profitEth:      (() => { const p = d.volumeWei - d.payoutsWei; return p < 0n ? '-' + formatEther(-p) : formatEther(p) })(),
         uniquePlayers:  new Set(
           betLogs
             .filter(l => toDateKey(tsMap[l.blockNumber.toString()] || 0) === d.date)
@@ -205,7 +205,7 @@ export default async function handler(req, res) {
       uniquePlayers,
       totalVolumeEth:  formatEther(totalVolume),
       totalPayoutsEth: formatEther(totalPayouts),
-      houseProfitEth:  formatEther(houseProfit),
+      houseProfitEth:  houseProfit < 0n ? '-' + formatEther(-houseProfit) : formatEther(houseProfit),
       // Per-day
       dailyStats,
       // Recent rounds
