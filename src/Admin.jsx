@@ -162,6 +162,64 @@ export default function Admin() {
         />
       </div>
 
+      {/* Daily stats table */}
+      {stats.dailyStats?.length > 0 && (
+        <div style={{ ...s.tableWrap, marginBottom: 16 }}>
+          <div style={s.tableHeader}>
+            <span style={s.tableTitle}>📅 Stats by Day</span>
+            <span style={s.tableSub}>{stats.dailyStats.length} days</span>
+          </div>
+          <div style={s.tableScroll}>
+            <table style={s.table}>
+              <thead>
+                <tr>
+                  {['Date', 'Bets', 'Wins', 'Crashes', 'Win Rate', 'Players', 'Volume', 'Paid Out', 'Profit'].map(h => (
+                    <th key={h} style={s.th}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {stats.dailyStats.map((d, i) => {
+                  const winRate = d.bets > 0 ? ((d.wins / d.bets) * 100).toFixed(0) : 0
+                  const isToday = d.date === new Date().toISOString().slice(0, 10)
+                  return (
+                    <tr key={i} style={{ background: isToday ? 'rgba(91,163,217,0.06)' : i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)' }}>
+                      <td style={{ ...s.td, color: isToday ? '#5ba3d9' : '#c8dff5', fontWeight: isToday ? 700 : 400 }}>
+                        {d.date}{isToday && <span style={{ marginLeft: 6, fontSize: '0.65rem', color: '#5ba3d9' }}>TODAY</span>}
+                      </td>
+                      <td style={{ ...s.td, color: '#c8dff5' }}>{d.bets}</td>
+                      <td style={{ ...s.td, color: '#3dcfb0' }}>{d.wins}</td>
+                      <td style={{ ...s.td, color: '#d95c5c' }}>{d.crashes}</td>
+                      <td style={{ ...s.td, color: winRate >= 50 ? '#3dcfb0' : '#d95c5c', fontWeight: 700 }}>{winRate}%</td>
+                      <td style={{ ...s.td, color: '#4a6a90' }}>{d.uniquePlayers}</td>
+                      <td style={{ ...s.td, color: '#c8dff5' }}>{parseFloat(d.volumeEth).toFixed(4)}</td>
+                      <td style={{ ...s.td, color: '#3dcfb0' }}>{parseFloat(d.payoutsEth).toFixed(4)}</td>
+                      <td style={{ ...s.td, color: parseFloat(d.profitEth) >= 0 ? '#c8873a' : '#d95c5c', fontWeight: 700 }}>
+                        {parseFloat(d.profitEth) >= 0 ? '+' : ''}{parseFloat(d.profitEth).toFixed(4)}
+                      </td>
+                    </tr>
+                  )
+                })}
+                {/* Totals row */}
+                <tr style={{ background: 'rgba(91,163,217,0.04)', borderTop: '1px solid rgba(90,130,200,0.18)' }}>
+                  <td style={{ ...s.td, color: '#5ba3d9', fontWeight: 800 }}>TOTAL</td>
+                  <td style={{ ...s.td, color: '#c8dff5', fontWeight: 700 }}>{stats.totalBets}</td>
+                  <td style={{ ...s.td, color: '#3dcfb0', fontWeight: 700 }}>{stats.totalWins}</td>
+                  <td style={{ ...s.td, color: '#d95c5c', fontWeight: 700 }}>{stats.totalCrashes}</td>
+                  <td style={{ ...s.td, color: '#c8dff5', fontWeight: 700 }}>
+                    {stats.totalBets > 0 ? ((stats.totalWins / stats.totalBets) * 100).toFixed(0) : 0}%
+                  </td>
+                  <td style={{ ...s.td, color: '#4a6a90', fontWeight: 700 }}>{stats.uniquePlayers}</td>
+                  <td style={{ ...s.td, color: '#c8dff5', fontWeight: 700 }}>{parseFloat(stats.totalVolumeEth).toFixed(4)}</td>
+                  <td style={{ ...s.td, color: '#3dcfb0', fontWeight: 700 }}>{parseFloat(stats.totalPayoutsEth).toFixed(4)}</td>
+                  <td style={{ ...s.td, color: '#c8873a', fontWeight: 800 }}>+{parseFloat(stats.houseProfitEth).toFixed(4)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Rounds table */}
       <div style={s.tableWrap}>
         <div style={s.tableHeader}>
