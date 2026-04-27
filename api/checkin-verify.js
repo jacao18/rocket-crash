@@ -96,6 +96,9 @@ export default async function handler(req, res) {
     const client  = createPublicClient({ chain: minatoTestnet, transport: http() })
     const receipt = await client.getTransactionReceipt({ hash: txHash })
 
+    console.log(`[checkin-verify] txHash=${txHash} player=${player}`)
+    console.log(`[checkin-verify] CHECKIN_CONTRACT env=${CHECKIN_CONTRACT}`)
+
     if (!receipt) {
       return res.status(400).json({ error: 'Transaction not found or not yet confirmed. Wait a few seconds and retry.' })
     }
@@ -103,10 +106,14 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Transaction reverted' })
     }
 
-    // ── Verify tx went to the correct contract (if configured)
+    console.log(`[checkin-verify] receipt.to=${receipt.to} logs=${receipt.logs.length}`)
+
+    // ── Verify tx went to the correct contract (if configured and non-zero)
     const isZeroAddr = !CHECKIN_CONTRACT || CHECKIN_CONTRACT === '0x0000000000000000000000000000000000000000'
     if (!isZeroAddr && receipt.to?.toLowerCase() !== CHECKIN_CONTRACT) {
-      return res.status(400).json({ error: 'Transaction was not sent to the DailyCheckIn contract' })
+      return res.status(400).json({
+        error: `Transaction sent to wrong contract. Expected ${CHECKIN_CONTRACT}, got ${receipt.to?.toLowerCase()}`
+      })
     }
 
     // ── Parse CheckedIn event directly from receipt logs (no extra RPC call)
@@ -114,8 +121,10 @@ export default async function handler(req, res) {
     try {
       parsedLogs = parseEventLogs({ abi: CHECKIN_ABI, logs: receipt.logs })
     } catch (e) {
-      console.warn('[checkin-verify] parseEventLogs:', e.message)
+      console.warn('[checkin-verify] parseEventLogs error:', e.message)
     }
+
+    console.log(`[checkin-verify] parsedLogs=${JSON.stringify(parsedLogs.map(l => ({ name: l.eventName, player: l.args?.player })))}`)
 
     const playerLog = parsedLogs.find(
       l => l.eventName === 'CheckedIn' &&
@@ -123,8 +132,17 @@ export default async function handler(req, res) {
     )
 
     if (!playerLog) {
-      console.error('[checkin-verify] no CheckedIn log. receipt.logs:', JSON.stringify(receipt.logs))
-      return res.status(400).json({ error: 'CheckedIn event not found. Make sure you called the DailyCheckIn contract.' })
+      // Log raw topics to help debug
+      console.error('[checkin-verify] raw logs topics:', receipt.logs.map(l => l.topics))
+      return res.status(400).json({
+        error: 'CheckedIn event not found. Make sure you called the DailyCheckIn contract.',
+        debug: {
+          contractExpected: CHECKIN_CONTRACT,
+          txSentTo: receipt.to,
+          rawLogsCount: receipt.logs.length,
+          rawTopics: receipt.logs.map(l => l.topics[0]),
+        }
+      })
     }
 
     // ── Calculate new streak
