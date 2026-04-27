@@ -1,24 +1,15 @@
 /**
  * POST /api/checkin-verify
- * Body: { txHash: "0x...", player: "0x...", expectedWei: "5000000000000" }
+ * Body: { txHash: "0x...", player: "0x...", streakToken: "..." }
  *
- * Verifies on-chain that:
- *   1. The tx exists and succeeded
- *   2. The sender is `player`
- *   3. The recipient is the TREASURY address
- *   4. The value >= expectedWei * 0.9 (10% tolerance)
+ * Verifies on-chain that the CheckedIn event was emitted by the
+ * DailyCheckIn contract for this player in this transaction.
+ * Parses logs directly from the receipt — no extra RPC call.
  *
- * Returns: { ok: true, streak, lastCheckin, checkedToday }
- *
- * Streak state is stored in a signed JWT-style token in the response,
- * and the client stores it in localStorage. The server re-validates
- * the token on each request so the client cannot manipulate the streak.
- *
- * Token structure (base64 JSON, HMAC-signed with CHECKIN_SECRET):
- *   { player, streak, lastCheckin (YYYY-MM-DD UTC), sig }
+ * Returns: { ok: true, streak, lastCheckin, streakToken }
  */
 
-import { createPublicClient, http, defineChain, parseAbiItem } from 'viem'
+import { createPublicClient, http, defineChain, parseEventLogs } from 'viem'
 import { createHmac } from 'crypto'
 
 const minatoTestnet = defineChain({
@@ -31,38 +22,39 @@ const minatoTestnet = defineChain({
 const CHECKIN_CONTRACT = (process.env.VITE_CHECKIN_ADDRESS || '').toLowerCase()
 const SECRET           = process.env.CHECKIN_SECRET || 'comet-checkin-secret-change-me'
 
-const CHECKED_IN_ABI = parseAbiItem('event CheckedIn(address indexed player, uint256 feePaid, uint256 timestamp)')
+const CHECKIN_ABI = [{
+  type:   'event',
+  name:   'CheckedIn',
+  inputs: [
+    { name: 'player',    type: 'address', indexed: true  },
+    { name: 'feePaid',   type: 'uint256', indexed: false },
+    { name: 'timestamp', type: 'uint256', indexed: false },
+  ],
+}]
 
+// ── Streak token helpers (HMAC-signed base64 JSON)
 function todayUTC() {
   return new Date().toISOString().slice(0, 10)
 }
-
 function yesterdayUTC() {
   const d = new Date()
   d.setUTCDate(d.getUTCDate() - 1)
   return d.toISOString().slice(0, 10)
 }
-
 function sign(payload) {
   return createHmac('sha256', SECRET).update(JSON.stringify(payload)).digest('hex')
 }
-
 function makeToken(player, streak, lastCheckin) {
   const payload = { player: player.toLowerCase(), streak, lastCheckin }
-  const sig = sign(payload)
-  return Buffer.from(JSON.stringify({ ...payload, sig })).toString('base64')
+  return Buffer.from(JSON.stringify({ ...payload, sig: sign(payload) })).toString('base64')
 }
-
 function parseToken(token) {
   try {
     const obj = JSON.parse(Buffer.from(token, 'base64').toString('utf8'))
     const { sig, ...payload } = obj
-    const expected = sign(payload)
-    if (sig !== expected) return null
+    if (sign(payload) !== sig) return null
     return payload
-  } catch {
-    return null
-  }
+  } catch { return null }
 }
 
 export default async function handler(req, res) {
@@ -75,21 +67,18 @@ export default async function handler(req, res) {
   if (!txHash || !player) {
     return res.status(400).json({ error: 'Missing txHash or player' })
   }
-
   if (!/^0x[0-9a-fA-F]{64}$/.test(txHash)) {
     return res.status(400).json({ error: 'Invalid txHash' })
   }
-
   if (!/^0x[0-9a-fA-F]{40}$/.test(player)) {
     return res.status(400).json({ error: 'Invalid player address' })
   }
 
   const today = todayUTC()
 
-  // Parse existing streak token (if any)
+  // ── Parse existing streak token
   let currentStreak = 0
   let lastCheckin   = null
-
   if (streakToken) {
     const parsed = parseToken(streakToken)
     if (parsed && parsed.player === player.toLowerCase()) {
@@ -98,59 +87,51 @@ export default async function handler(req, res) {
     }
   }
 
-  // Prevent double check-in today
+  // ── Prevent double check-in (token-based guard)
   if (lastCheckin === today) {
     return res.status(400).json({ error: 'Already checked in today', checkedToday: true })
   }
 
-  // Verify tx on-chain via contract event
   try {
     const client  = createPublicClient({ chain: minatoTestnet, transport: http() })
     const receipt = await client.getTransactionReceipt({ hash: txHash })
 
     if (!receipt) {
-      return res.status(400).json({ error: 'Transaction not found' })
+      return res.status(400).json({ error: 'Transaction not found or not yet confirmed. Wait a few seconds and retry.' })
     }
     if (receipt.status !== 'success') {
-      return res.status(400).json({ error: 'Transaction failed' })
+      return res.status(400).json({ error: 'Transaction reverted' })
     }
 
-    // Verify the tx was sent TO the check-in contract
-    if (CHECKIN_CONTRACT && receipt.to?.toLowerCase() !== CHECKIN_CONTRACT) {
-      return res.status(400).json({ error: 'Transaction was not sent to the check-in contract' })
+    // ── Verify tx went to the correct contract (if configured)
+    const isZeroAddr = !CHECKIN_CONTRACT || CHECKIN_CONTRACT === '0x0000000000000000000000000000000000000000'
+    if (!isZeroAddr && receipt.to?.toLowerCase() !== CHECKIN_CONTRACT) {
+      return res.status(400).json({ error: 'Transaction was not sent to the DailyCheckIn contract' })
     }
 
-    // Find the CheckedIn event emitted for this player in this tx
-    const logs = await client.getLogs({
-      address:     receipt.to,
-      event:       CHECKED_IN_ABI,
-      fromBlock:   receipt.blockNumber,
-      toBlock:     receipt.blockNumber,
-    })
+    // ── Parse CheckedIn event directly from receipt logs (no extra RPC call)
+    let parsedLogs = []
+    try {
+      parsedLogs = parseEventLogs({ abi: CHECKIN_ABI, logs: receipt.logs })
+    } catch (e) {
+      console.warn('[checkin-verify] parseEventLogs:', e.message)
+    }
 
-    const playerLog = logs.find(
-      l => l.transactionHash === txHash &&
-           l.args.player?.toLowerCase() === player.toLowerCase()
+    const playerLog = parsedLogs.find(
+      l => l.eventName === 'CheckedIn' &&
+           l.args?.player?.toLowerCase() === player.toLowerCase()
     )
 
     if (!playerLog) {
-      return res.status(400).json({ error: 'CheckedIn event not found for this player in this transaction' })
+      console.error('[checkin-verify] no CheckedIn log. receipt.logs:', JSON.stringify(receipt.logs))
+      return res.status(400).json({ error: 'CheckedIn event not found. Make sure you called the DailyCheckIn contract.' })
     }
 
-    // Calculate new streak
+    // ── Calculate new streak
     const yesterday = yesterdayUTC()
-    let newStreak
-
-    if (lastCheckin === yesterday) {
-      // Consecutive day — extend streak
-      newStreak = currentStreak + 1
-    } else {
-      // Missed a day (or first check-in) — reset to 1
-      newStreak = 1
-    }
+    const newStreak = lastCheckin === yesterday ? currentStreak + 1 : 1
 
     const token = makeToken(player, newStreak, today)
-
     console.log(`[checkin] player=${player} streak=${newStreak} date=${today} tx=${txHash}`)
 
     return res.status(200).json({
