@@ -6,6 +6,7 @@ import { parseEther, formatEther } from 'viem'
 import { useEffect, useRef, useState } from 'react'
 import { ROCKET_CRASH_ABI, ROCKET_CRASH_ADDRESS } from './contract.js'
 import { useWriteContract } from 'wagmi'
+import CheckIn from './CheckIn.jsx'
 
 // ─── BET VALUES ──────────────────────────────────────────────
 const BET_VALUES = [0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.010]
@@ -602,6 +603,10 @@ export default function App() {
         </div>
       )}
 
+      {/* ── TWO COLUMN LAYOUT ── */}
+      <div style={styles.twoCol}>
+      <div style={styles.leftCol}>
+
       {/* Game canvas */}
       <div style={styles.gameWrap}>
         <canvas ref={canvasRef} style={styles.canvas} />
@@ -681,6 +686,13 @@ export default function App() {
           ))}
         </div>
       </div>
+    </div>
+
+    {/* ── RIGHT COLUMN ── */}
+    <div style={styles.rightCol}>
+      <CheckIn address={address} authenticated={authenticated} />
+    </div>
+    </div>
     </>
   )
 }
@@ -700,8 +712,13 @@ export default function App() {
 //  Crash red:     #d95c5c
 // ─────────────────────────────────────────────────────────
 const styles = {
+  // ── Two-column layout
+  twoCol:      { display: 'flex', gap: 14, width: '100%', maxWidth: 980, alignItems: 'flex-start' },
+  leftCol:     { display: 'flex', flexDirection: 'column', alignItems: 'center', flex: '1 1 0', minWidth: 0 },
+  rightCol:    { width: 220, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 14, paddingTop: 0 },
+
   // ── Header banner — no border radius, bleeds into black bg
-  headerWrap:   { width: '100%', maxWidth: 680, position: 'relative', marginBottom: 0, overflow: 'hidden' },
+  headerWrap:   { width: '100%', maxWidth: 980, position: 'relative', marginBottom: 0, overflow: 'hidden' },
   headerBanner: { width: '100%', display: 'block', objectFit: 'cover' },
   walletOverlay:{ position: 'absolute', top: 10, right: 10, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(10px)', border: '1px solid rgba(90,130,200,0.22)', borderRadius: 10, padding: '6px 10px' },
 
@@ -746,7 +763,7 @@ const styles = {
   faucetLink:   { fontSize: '0.72rem', color: '#c8873a', textDecoration: 'none' },
 
   // ── Game area
-  gameWrap:    { width: '100%', maxWidth: 680, background: '#040608', border: '1px solid rgba(90,130,200,0.14)', borderTop: 'none', borderRadius: '0 0 16px 16px', overflow: 'hidden', position: 'relative', marginBottom: 16 },
+  gameWrap:    { width: '100%', background: '#040608', border: '1px solid rgba(90,130,200,0.14)', borderTop: 'none', borderRadius: '0 0 16px 16px', overflow: 'hidden', position: 'relative', marginBottom: 16 },
   canvas:      { display: 'block', width: '100%', height: 320 },
   multDisplay: { position: 'absolute', left: '50%', transform: 'translateX(-50%)', textAlign: 'center', pointerEvents: 'none', transition: 'top 0.35s ease' },
   multValue:   { fontSize: '4.5rem', fontWeight: 900, lineHeight: 1, textShadow: '0 0 40px currentColor', transition: 'color 0.2s' },
@@ -754,10 +771,10 @@ const styles = {
   banner:      { display: 'flex', position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 6 },
   bannerBig:   { fontSize: '2rem', fontWeight: 900 },
   bannerSmall: { fontSize: '0.85rem', color: '#8ab4d4' },
-  statusMsg:   { width: '100%', maxWidth: 680, textAlign: 'center', fontSize: '0.83rem', color: '#4a6a90', marginBottom: 8 },
+  statusMsg:   { width: '100%', textAlign: 'center', fontSize: '0.83rem', color: '#4a6a90', marginBottom: 8 },
 
   // ── Controls panel
-  panel:       { width: '100%', maxWidth: 680, background: '#0a0c14', border: '1px solid rgba(90,130,200,0.14)', borderRadius: 14, padding: '20px 24px', marginBottom: 14 },
+  panel:       { width: '100%', background: '#0a0c14', border: '1px solid rgba(90,130,200,0.14)', borderRadius: 14, padding: '20px 24px', marginBottom: 14 },
   panelRow:    { display: 'flex', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap' },
   field:       { display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minWidth: 140 },
   fieldLabel:  { fontSize: '0.68rem', letterSpacing: '1.8px', color: '#4a6a90', textTransform: 'uppercase' },
@@ -767,7 +784,7 @@ const styles = {
   btnCashout:  { background: 'rgba(200,135,58,0.16)', color: '#c8873a', border: '1px solid rgba(200,135,58,0.40)' },
 
   // ── History
-  historyWrap: { width: '100%', maxWidth: 680 },
+  historyWrap: { width: '100%' },
   historyTitle:{ fontSize: '0.68rem', letterSpacing: 2.5, color: '#2e4a66', textTransform: 'uppercase', marginBottom: 8 },
   historyList: { display: 'flex', gap: 6, flexWrap: 'wrap' },
   historyChip: { padding: '4px 10px', borderRadius: 999, fontSize: '0.76rem', fontWeight: 700 },
