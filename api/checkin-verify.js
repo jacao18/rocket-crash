@@ -18,7 +18,7 @@
  *   { player, streak, lastCheckin (YYYY-MM-DD UTC), sig }
  */
 
-import { createPublicClient, http, defineChain } from 'viem'
+import { createPublicClient, http, defineChain, parseAbiItem } from 'viem'
 import { createHmac } from 'crypto'
 
 const minatoTestnet = defineChain({
@@ -28,8 +28,10 @@ const minatoTestnet = defineChain({
   rpcUrls: { default: { http: ['https://rpc.minato.soneium.org/'] } },
 })
 
-const TREASURY = (process.env.TREASURY_ADDRESS || '0xd41D6fDD91d3c39d3AC29745f68548843598D572').toLowerCase()
-const SECRET   = process.env.CHECKIN_SECRET || 'comet-checkin-secret-change-me'
+const CHECKIN_CONTRACT = (process.env.VITE_CHECKIN_ADDRESS || '').toLowerCase()
+const SECRET           = process.env.CHECKIN_SECRET || 'comet-checkin-secret-change-me'
+
+const CHECKED_IN_ABI = parseAbiItem('event CheckedIn(address indexed player, uint256 feePaid, uint256 timestamp)')
 
 function todayUTC() {
   return new Date().toISOString().slice(0, 10)
@@ -68,7 +70,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { txHash, player, expectedWei, streakToken } = req.body
+  const { txHash, player, streakToken } = req.body
 
   if (!txHash || !player) {
     return res.status(400).json({ error: 'Missing txHash or player' })
@@ -101,9 +103,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Already checked in today', checkedToday: true })
   }
 
-  // Verify tx on-chain
+  // Verify tx on-chain via contract event
   try {
-    const client = createPublicClient({ chain: minatoTestnet, transport: http() })
+    const client  = createPublicClient({ chain: minatoTestnet, transport: http() })
     const receipt = await client.getTransactionReceipt({ hash: txHash })
 
     if (!receipt) {
@@ -113,27 +115,26 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Transaction failed' })
     }
 
-    const tx = await client.getTransaction({ hash: txHash })
-
-    // Verify sender
-    if (tx.from.toLowerCase() !== player.toLowerCase()) {
-      return res.status(400).json({ error: 'Transaction sender does not match player' })
+    // Verify the tx was sent TO the check-in contract
+    if (CHECKIN_CONTRACT && receipt.to?.toLowerCase() !== CHECKIN_CONTRACT) {
+      return res.status(400).json({ error: 'Transaction was not sent to the check-in contract' })
     }
 
-    // Verify recipient is treasury
-    if (!tx.to || tx.to.toLowerCase() !== TREASURY) {
-      return res.status(400).json({ error: 'Transaction recipient is not the treasury' })
-    }
+    // Find the CheckedIn event emitted for this player in this tx
+    const logs = await client.getLogs({
+      address:     receipt.to,
+      event:       CHECKED_IN_ABI,
+      fromBlock:   receipt.blockNumber,
+      toBlock:     receipt.blockNumber,
+    })
 
-    // Verify value (allow 10% below expected to handle gas estimation differences)
-    if (expectedWei) {
-      const expected = BigInt(expectedWei)
-      const minimum  = expected - expected / 10n // 90% of expected
-      if (tx.value < minimum) {
-        return res.status(400).json({
-          error: `Insufficient payment: sent ${tx.value} wei, expected at least ${minimum} wei`
-        })
-      }
+    const playerLog = logs.find(
+      l => l.transactionHash === txHash &&
+           l.args.player?.toLowerCase() === player.toLowerCase()
+    )
+
+    if (!playerLog) {
+      return res.status(400).json({ error: 'CheckedIn event not found for this player in this transaction' })
     }
 
     // Calculate new streak
