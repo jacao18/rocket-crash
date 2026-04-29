@@ -48,13 +48,14 @@ export default function CheckIn({ address, authenticated }) {
         label:   DAY_LABELS[d.getUTCDay()],
         dateStr,
         isToday: dateStr === new Date().toISOString().slice(0, 10),
+        isPast:  d < new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00Z'),
       }
     })
   }
 
   // ── Days with check-in this week (estimated from streak + lastCheckin)
   function getCheckedDays() {
-    if (!lastCheckin || !streakAlive) return new Set()
+    if (!lastCheckin) return new Set()
     const checked = new Set()
     const last = new Date(lastCheckin + 'T00:00:00Z')
     for (let i = 0; i < Math.min(streak, 7); i++) {
@@ -88,12 +89,11 @@ export default function CheckIn({ address, authenticated }) {
     }
   }, [address])
 
-  // ── Load fee from backend (keeps price off screen, no ETH amounts shown)
+  // ── Load fee from backend
   const loadFee = useCallback(async () => {
     try {
       const res  = await fetch('/api/checkin-price')
       const data = await res.json()
-      // Store wei internally only — never display it
       setFeeWei(data.weiWithBuffer)
     } catch (err) {
       console.warn('[checkin] fee error:', err)
@@ -147,7 +147,7 @@ export default function CheckIn({ address, authenticated }) {
     } catch (err) {
       console.error('[checkin]', err)
       setStatus('❌ ' + (err.shortMessage || err.message || 'Check-in failed'))
-      setTimeout(() => setStatus(''), 5000)
+      setTimeout(() => setStatus(''), 8000)
     } finally {
       setLoading(false)
     }
@@ -168,28 +168,30 @@ export default function CheckIn({ address, authenticated }) {
 
       {/* Week grid */}
       <div style={s.weekGrid}>
-        {weekDays.map(({ label, dateStr, isToday }) => {
-          const done = checkedSet.has(dateStr)
+        {weekDays.map(({ label, dateStr, isToday, isPast }) => {
+          const done   = checkedSet.has(dateStr)
+          const missed = isPast && !done && !isToday
+
           return (
             <div
               key={dateStr}
               style={{
                 ...s.dayCell,
                 ...(isToday && !done ? s.dayCellToday : {}),
-                ...(done ? s.dayCellDone : {}),
+                ...(done             ? s.dayCellDone  : {}),
+                ...(missed           ? s.dayCellMissed: {}),
               }}
             >
               <div style={s.dayLabel}>{label}</div>
-              <div style={s.dayIcon}>{done ? '⭐' : isToday ? '◎' : '·'}</div>
+              <div style={{ ...s.dayIcon, ...(done ? s.dayIconDone : {}) }}>
+                {done    ? '✓'  :
+                 missed  ? '✕'  :
+                 isToday ? '◎'  : '·'}
+              </div>
             </div>
           )
         })}
       </div>
-
-      {/* Checked-in confirmation line (no price shown) */}
-      {checkedToday && (
-        <div style={{ ...s.infoLine, color: '#3dcfb0' }}>✓ Checked in today</div>
-      )}
 
       {/* Status message */}
       {status && <div style={s.statusMsg}>{status}</div>}
@@ -207,7 +209,7 @@ export default function CheckIn({ address, authenticated }) {
           cursor:      (loading || checkedToday || !authenticated) ? 'not-allowed' : 'pointer',
         }}
       >
-        {loading ? '⏳ Processing…' : checkedToday ? '✓ Checked In' : '☀️ Check In'}
+        {loading ? '⏳ Processing…' : checkedToday ? 'Checked In' : '☀️ Check In'}
       </button>
 
       {!authenticated && (
@@ -273,15 +275,19 @@ const s = {
     border: '1px solid rgba(200,135,58,0.35)',
     background: 'rgba(200,135,58,0.08)',
   },
+  dayCellMissed: {
+    border: '1px solid rgba(180,60,60,0.30)',
+    background: 'rgba(180,60,60,0.06)',
+  },
   dayLabel: {
     fontSize: '0.58rem',
     color: '#2e4a66',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
-  dayIcon:    { fontSize: '0.85rem', lineHeight: 1 },
-  infoLine:   { fontSize: '0.72rem', textAlign: 'center' },
-  statusMsg:  { fontSize: '0.75rem', color: '#c8dff5', textAlign: 'center', background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '6px 10px' },
+  dayIcon:     { fontSize: '0.85rem', lineHeight: 1, fontWeight: 400 },
+  dayIconDone: { color: '#3dcfb0', fontWeight: 400 },
+  statusMsg:  { fontSize: '0.75rem', color: '#c8dff5', textAlign: 'center', background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '6px 10px', wordBreak: 'break-all' },
   btn: {
     width: '100%',
     padding: '11px',

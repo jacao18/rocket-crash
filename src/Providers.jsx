@@ -31,14 +31,20 @@ export function Providers({ children }) {
     <PrivyProvider
       appId={import.meta.env.VITE_PRIVY_APP_ID}
       config={{
-        loginMethods: ['google'],
+        loginMethods: ['google', 'apple', 'wallet', 'email'],
         appearance: {
-          theme: 'dark',
-          accentColor: '#f97316',
-          logo: 'https://rocket-crash-two.vercel.app/favicon.ico',
+          theme: 'light',
+          accentColor: '#5b6cf9',
+          logo: 'https://cometgames.xyz/comet-icon.png',
+          landingHeader: 'Log in or sign up',
+          loginMessage: '',
+          walletList: ['rabby', 'metamask', 'rainbow', 'coinbase_wallet', 'wallet_connect'],
         },
         embeddedWallets: {
           createOnLogin: 'users-without-wallets',
+        },
+        externalWallets: {
+          coinbaseWallet: { connectionOptions: 'all' },
         },
         defaultChain: minatoTestnet,
         supportedChains: [minatoTestnet],

@@ -1,9 +1,8 @@
-import cometLogo from './assets/comet-logo-white.png'
-import cometBanner from './assets/comet-header-banner.png'
+import cometLogo from './assets/comet-icon.png'
 import { usePrivy, useWallets } from '@privy-io/react-auth'
 import { useBalance, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi'
 import { parseEther, formatEther } from 'viem'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { ROCKET_CRASH_ABI, ROCKET_CRASH_ADDRESS } from './contract.js'
 import { useWriteContract } from 'wagmi'
 import CheckIn from './CheckIn.jsx'
@@ -12,7 +11,19 @@ import CheckIn from './CheckIn.jsx'
 const BET_VALUES = [0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.010]
 const SPEED_K    = 0.18
 
+// ─── Responsive hook ─────────────────────────────────────────
+function useIsMobile(breakpoint = 680) {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < breakpoint)
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < breakpoint)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [breakpoint])
+  return isMobile
+}
+
 export default function App() {
+  const isMobile = useIsMobile()
   const { login, logout, authenticated, ready, user } = usePrivy()
   const { wallets } = useWallets()
 
@@ -31,6 +42,38 @@ export default function App() {
   const [history, setHistory]         = useState([])
   const [profit, setProfit]           = useState(0)
   const [statusMsg, setStatusMsg]     = useState('')
+
+  // ── UI state
+  const [showEditName, setShowEditName] = useState(false)
+  const [playerName, setPlayerName]     = useState(() => localStorage.getItem('comet_player_name') || '')
+  const [nameInput, setNameInput]       = useState('')
+  const [showReferral, setShowReferral] = useState(false)
+  const [referralCopied, setReferralCopied] = useState(false)
+
+  // ── Leaderboard (mock — replace with real API later)
+  const [leaderboard] = useState([
+    { rank: 1, name: 'StarHunter',  profit: 0.142, wins: 38 },
+    { rank: 2, name: 'NightComet',  profit: 0.098, wins: 29 },
+    { rank: 3, name: 'BlueFlame',   profit: 0.076, wins: 24 },
+    { rank: 4, name: 'VoidRocket',  profit: 0.054, wins: 19 },
+    { rank: 5, name: 'CryptoAce',   profit: 0.041, wins: 15 },
+    { rank: 6, name: 'AstroKing',   profit: 0.033, wins: 12 },
+    { rank: 7, name: 'DarkMatter',  profit: 0.021, wins: 9  },
+    { rank: 8, name: 'NebulaBet',   profit: 0.014, wins: 7  },
+  ])
+
+  function savePlayerName(name) {
+    localStorage.setItem('comet_player_name', name)
+    setPlayerName(name)
+    setShowEditName(false)
+  }
+
+  function copyReferral() {
+    const ref = `https://cometgames.xyz?ref=${address?.slice(2,8) || 'comet'}`
+    navigator.clipboard.writeText(ref)
+    setReferralCopied(true)
+    setTimeout(() => setReferralCopied(false), 2000)
+  }
 
   const canvasRef    = useRef(null)
   const gameRef      = useRef({
@@ -463,24 +506,45 @@ export default function App() {
 
   return (
     <>
-      {/* ── HEADER BANNER ── */}
-      <div style={styles.headerWrap}>
-        <img src={cometBanner} alt="Comet Rocket Crash" style={styles.headerBanner} />
+      {/* ── HEADER ── */}
+      <div style={{ ...styles.headerWrap, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: isMobile ? '8px 10px' : '10px 16px', background: '#06080f', borderBottom: '1px solid rgba(90,130,200,0.12)' }}>
+        {/* Left: logo + referral */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10 }}>
+          <img src={cometLogo} alt="Comet Games" style={{ width: isMobile ? 40 : 52, height: isMobile ? 40 : 52, borderRadius: 10, objectFit: 'cover' }} />
+          {authenticated && address && (
+            <button
+              onClick={copyReferral}
+              style={{ ...styles.btnReferral, ...(isMobile ? { fontSize: '0.65rem', padding: '4px 8px' } : {}) }}
+            >
+              {referralCopied ? '✓ Link copiado!' : '🔗 Referral'}
+            </button>
+          )}
+        </div>
 
-        {/* Wallet widget — overlaid top right */}
-        <div style={styles.walletOverlay}>
+        {/* Wallet widget */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 5 : 8 }}>
           {authenticated && address ? (
             <>
               <div style={styles.walletInfo}>
-                <span style={styles.walletBal}>{balEth} <span style={{ color: '#5ba3d9', fontSize: '0.7rem' }}>ETH</span></span>
-                <span style={styles.walletAddr2}>{address.slice(0, 6)}…{address.slice(-4)}</span>
+                <span style={{ ...styles.walletBal, fontSize: isMobile ? '0.78rem' : '0.92rem' }}>
+                  {balEth} <span style={{ color: '#5ba3d9', fontSize: '0.65rem' }}>ETH</span>
+                </span>
+                {!isMobile && <span style={styles.walletAddr2}>{address.slice(0, 6)}…{address.slice(-4)}</span>}
               </div>
-              <button onClick={() => setShowDeposit(true)} style={styles.btnDeposit}>+ Deposit</button>
-              <button onClick={() => { setShowWithdraw(true); setWithdrawStatus('') }} style={styles.btnWithdraw}>↑ Withdraw</button>
-              <button onClick={logout} style={styles.btnSmall}>Logout</button>
+              <button onClick={() => setShowDeposit(true)} style={{ ...styles.btnDeposit, ...(isMobile ? styles.btnMobileCompact : {}) }}>
+                {isMobile ? '+' : '+ Deposit'}
+              </button>
+              <button onClick={() => { setShowWithdraw(true); setWithdrawStatus('') }} style={{ ...styles.btnWithdraw, ...(isMobile ? styles.btnMobileCompact : {}) }}>
+                {isMobile ? '↑' : '↑ Withdraw'}
+              </button>
+              <button onClick={logout} style={{ ...styles.btnSmall, ...(isMobile ? styles.btnMobileCompact : {}) }}>
+                {isMobile ? '✕' : 'Logout'}
+              </button>
             </>
           ) : (
-            <button onClick={login} style={styles.btnLogin}>Sign in with Google</button>
+            <button onClick={login} style={{ ...styles.btnLogin, ...(isMobile ? { fontSize: '0.78rem', padding: '8px 14px' } : {}) }}>
+              {isMobile ? 'Sign in' : 'Sign in with Google'}
+            </button>
           )}
         </div>
       </div>
@@ -603,13 +667,43 @@ export default function App() {
         </div>
       )}
 
+      {/* ── EDIT NAME MODAL ── */}
+      {showEditName && (
+        <div style={styles.modalOverlay} onClick={() => setShowEditName(false)}>
+          <div style={styles.modalBox} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <span style={styles.modalTitle}>✏️ Edit Player Name</span>
+              <button onClick={() => setShowEditName(false)} style={styles.modalClose}>✕</button>
+            </div>
+            <p style={styles.modalSubtitle}>Choose a display name shown on the leaderboard.</p>
+            <input
+              type="text"
+              placeholder="Enter your name…"
+              value={nameInput}
+              onChange={e => setNameInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && nameInput.trim() && savePlayerName(nameInput.trim())}
+              maxLength={20}
+              autoFocus
+              style={{ ...styles.withdrawInput, marginBottom: 16 }}
+            />
+            <button
+              onClick={() => nameInput.trim() && savePlayerName(nameInput.trim())}
+              disabled={!nameInput.trim()}
+              style={{ ...styles.btnWithdrawSend, opacity: nameInput.trim() ? 1 : 0.4 }}
+            >
+              Save Name
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── TWO COLUMN LAYOUT ── */}
-      <div style={styles.twoCol}>
+      <div style={{ ...styles.twoCol, flexDirection: isMobile ? 'column' : 'row' }}>
       <div style={styles.leftCol}>
 
       {/* Game canvas */}
       <div style={styles.gameWrap}>
-        <canvas ref={canvasRef} style={styles.canvas} />
+        <canvas ref={canvasRef} style={{ ...styles.canvas, height: isMobile ? 220 : 320 }} />
 
         {/* Multiplier overlay */}
         <div style={{ ...styles.multDisplay, top: gameState === 'idle' ? 'calc(100% - 80px)' : '12px' }}>
@@ -645,30 +739,30 @@ export default function App() {
       )}
 
       {/* Controls */}
-      <div style={styles.panel}>
-        <div style={styles.panelRow}>
-          <div style={styles.field}>
-            <label style={styles.fieldLabel}>BET AMOUNT (ETH)</label>
-            <input
-              type="range" min="1" max="10" step="1"
-              value={BET_VALUES.indexOf(betAmount) + 1}
-              onChange={e => setBetAmount(BET_VALUES[e.target.value - 1])}
-              disabled={isFlying}
-              style={{ accentColor: '#5ba3d9', cursor: 'pointer', width: '100%' }}
-            />
-            <span style={styles.valDisplay}>{betAmount.toFixed(3)} ETH</span>
-          </div>
+      <div style={{ ...styles.panel, padding: isMobile ? '14px 14px' : '20px 24px' }}>
+        <div style={styles.field}>
+          <label style={styles.fieldLabel}>BET AMOUNT (ETH)</label>
+          <input
+            type="range" min="1" max="10" step="1"
+            value={BET_VALUES.indexOf(betAmount) + 1}
+            onChange={e => setBetAmount(BET_VALUES[e.target.value - 1])}
+            disabled={isFlying}
+            style={{ accentColor: '#5ba3d9', cursor: 'pointer', width: '100%' }}
+          />
+          <span style={styles.valDisplay}>{betAmount.toFixed(3)} ETH</span>
+        </div>
+        <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
           <button
             onClick={startBet}
             disabled={isFlying}
-            style={{ ...styles.btn, ...styles.btnBet, opacity: isFlying ? 0.35 : 1 }}
+            style={{ ...styles.btn, ...styles.btnBet, opacity: isFlying ? 0.35 : 1, flex: 1, padding: isMobile ? '12px 8px' : '14px 28px' }}
           >
-            {authenticated ? '🚀 BET' : '🔑 LOGIN TO PLAY'}
+            {authenticated ? '🚀 BET' : '🔑 LOGIN'}
           </button>
           <button
             onClick={cashOut}
             disabled={!isFlying || !gameRef.current.betActive}
-            style={{ ...styles.btn, ...styles.btnCashout, opacity: (!isFlying || !gameRef.current.betActive) ? 0.35 : 1 }}
+            style={{ ...styles.btn, ...styles.btnCashout, opacity: (!isFlying || !gameRef.current.betActive) ? 0.35 : 1, flex: 1, padding: isMobile ? '12px 8px' : '14px 28px' }}
           >
             💰 CASH OUT
           </button>
@@ -689,7 +783,67 @@ export default function App() {
     </div>
 
     {/* ── RIGHT COLUMN ── */}
-    <div style={styles.rightCol}>
+    <div style={{ ...styles.rightCol, ...(isMobile ? styles.rightColMobile : {}) }}>
+
+      {/* Logo card */}
+      <div style={styles.logoCard}>
+        <img src={cometLogo} alt="Comet Games" style={styles.logoLarge} />
+        <div style={styles.logoTitle}>COMET GAMES</div>
+        <div style={styles.logoSub}>Rocket Crash · Soneium</div>
+      </div>
+
+      {/* Player card */}
+      {authenticated && address && (
+        <div style={styles.playerCard}>
+          <div style={styles.playerRow}>
+            <div style={styles.playerAvatar}>
+              {(playerName || address.slice(2, 4)).slice(0, 2).toUpperCase()}
+            </div>
+            <div style={styles.playerInfo}>
+              <div style={styles.playerName}>{playerName || `${address.slice(0, 6)}…${address.slice(-4)}`}</div>
+              <div style={styles.playerBal}>{balEth} ETH</div>
+            </div>
+          </div>
+          <div style={styles.playerBtns}>
+            <button
+              onClick={() => { setNameInput(playerName); setShowEditName(true) }}
+              style={styles.btnPlayerAction}
+            >
+              ✏️ Edit Name
+            </button>
+            <button
+              onClick={copyReferral}
+              style={{ ...styles.btnPlayerAction, color: referralCopied ? '#3dcfb0' : '#c8873a', borderColor: referralCopied ? 'rgba(61,207,176,0.35)' : 'rgba(200,135,58,0.35)' }}
+            >
+              {referralCopied ? '✓ Copied!' : '🔗 Referral'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Leaderboard */}
+      <div style={styles.lbCard}>
+        <div style={styles.lbHeader}>
+          <span style={styles.lbTitle}>🏆 LEADERBOARD</span>
+          <span style={styles.lbPeriod}>All Time</span>
+        </div>
+        <div style={styles.lbList}>
+          {leaderboard.map((row) => (
+            <div key={row.rank} style={{ ...styles.lbRow, ...(row.rank <= 3 ? styles.lbRowTop : {}) }}>
+              <span style={{ ...styles.lbRank, ...(row.rank === 1 ? { color: '#f4c84a' } : row.rank === 2 ? { color: '#b0bec5' } : row.rank === 3 ? { color: '#c8873a' } : {}) }}>
+                {row.rank <= 3 ? ['🥇','🥈','🥉'][row.rank - 1] : `#${row.rank}`}
+              </span>
+              <span style={styles.lbName}>{row.name}</span>
+              <div style={styles.lbStats}>
+                <span style={styles.lbProfit}>+{row.profit.toFixed(3)}</span>
+                <span style={styles.lbWins}>{row.wins}W</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Check-in */}
       <CheckIn address={address} authenticated={authenticated} />
     </div>
     </div>
@@ -713,14 +867,14 @@ export default function App() {
 // ─────────────────────────────────────────────────────────
 const styles = {
   // ── Two-column layout
-  twoCol:      { display: 'flex', gap: 14, width: '100%', maxWidth: 980, alignItems: 'flex-start' },
-  leftCol:     { display: 'flex', flexDirection: 'column', alignItems: 'center', flex: '1 1 0', minWidth: 0 },
-  rightCol:    { width: 220, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 14, paddingTop: 0 },
+  twoCol:           { display: 'flex', gap: 14, width: '100%', maxWidth: 1060, alignItems: 'flex-start' },
+  leftCol:          { display: 'flex', flexDirection: 'column', alignItems: 'center', flex: '1 1 0', minWidth: 0, width: '100%' },
+  rightCol:         { width: 260, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 12, paddingTop: 0 },
+  rightColMobile:   { width: '100%' },
 
-  // ── Header banner — no border radius, bleeds into black bg
-  headerWrap:   { width: '100%', maxWidth: 980, position: 'relative', marginBottom: 0, overflow: 'hidden' },
-  headerBanner: { width: '100%', display: 'block', objectFit: 'cover' },
-  walletOverlay:{ position: 'absolute', top: 10, right: 10, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(10px)', border: '1px solid rgba(90,130,200,0.22)', borderRadius: 10, padding: '6px 10px' },
+  // ── Header
+  headerWrap:         { width: '100%', maxWidth: 1060, borderRadius: '0 0 12px 12px', marginBottom: 4 },
+  btnMobileCompact:   { padding: '5px 8px', fontSize: '0.75rem', minWidth: 28 },
 
   // ── Wallet widget
   walletInfo:   { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 },
@@ -766,7 +920,7 @@ const styles = {
   gameWrap:    { width: '100%', background: '#040608', border: '1px solid rgba(90,130,200,0.14)', borderTop: 'none', borderRadius: '0 0 16px 16px', overflow: 'hidden', position: 'relative', marginBottom: 16 },
   canvas:      { display: 'block', width: '100%', height: 320 },
   multDisplay: { position: 'absolute', left: '50%', transform: 'translateX(-50%)', textAlign: 'center', pointerEvents: 'none', transition: 'top 0.35s ease' },
-  multValue:   { fontSize: '4.5rem', fontWeight: 900, lineHeight: 1, textShadow: '0 0 40px currentColor', transition: 'color 0.2s' },
+  multValue:   { fontSize: 'clamp(2.8rem, 8vw, 4.5rem)', fontWeight: 900, lineHeight: 1, textShadow: '0 0 40px currentColor', transition: 'color 0.2s' },
   multLabel:   { fontSize: '0.70rem', letterSpacing: 3.5, opacity: 0.45, marginTop: 6, textTransform: 'uppercase' },
   banner:      { display: 'flex', position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 6 },
   bannerBig:   { fontSize: '2rem', fontWeight: 900 },
@@ -776,7 +930,7 @@ const styles = {
   // ── Controls panel
   panel:       { width: '100%', background: '#0a0c14', border: '1px solid rgba(90,130,200,0.14)', borderRadius: 14, padding: '20px 24px', marginBottom: 14 },
   panelRow:    { display: 'flex', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap' },
-  field:       { display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minWidth: 140 },
+  field:       { display: 'flex', flexDirection: 'column', gap: 6, width: '100%' },
   fieldLabel:  { fontSize: '0.68rem', letterSpacing: '1.8px', color: '#4a6a90', textTransform: 'uppercase' },
   valDisplay:  { fontSize: '1rem', fontWeight: 700, color: '#5ba3d9' },
   btn:         { padding: '14px 28px', border: 'none', borderRadius: 11, fontSize: '1rem', fontWeight: 800, cursor: 'pointer', letterSpacing: 0.8, flex: 1, minWidth: 140 },
@@ -790,4 +944,37 @@ const styles = {
   historyChip: { padding: '4px 10px', borderRadius: 999, fontSize: '0.76rem', fontWeight: 700 },
   chipWin:     { background: 'rgba(61,207,176,0.10)', color: '#3dcfb0', border: '1px solid rgba(61,207,176,0.22)' },
   chipLose:    { background: 'rgba(217,92,92,0.10)', color: '#d95c5c', border: '1px solid rgba(217,92,92,0.22)' },
+
+  // ── Header referral button
+  btnReferral:  { padding: '5px 12px', background: 'rgba(200,135,58,0.12)', color: '#c8873a', border: '1px solid rgba(200,135,58,0.30)', borderRadius: 7, fontWeight: 700, cursor: 'pointer', fontSize: '0.74rem', whiteSpace: 'nowrap', letterSpacing: 0.3 },
+
+  // ── Logo card (right column)
+  logoCard:    { width: '100%', background: '#06080f', border: '1px solid rgba(90,130,200,0.14)', borderRadius: 16, padding: '20px 16px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 },
+  logoLarge:   { width: 96, height: 96, borderRadius: 20, objectFit: 'cover', boxShadow: '0 0 32px rgba(91,163,217,0.25)' },
+  logoTitle:   { fontSize: '0.95rem', fontWeight: 900, color: '#c8dff5', letterSpacing: 3.5, textTransform: 'uppercase', marginTop: 4 },
+  logoSub:     { fontSize: '0.65rem', color: '#2e4a66', letterSpacing: 1.5 },
+
+  // ── Player card (right column)
+  playerCard:  { width: '100%', background: '#0a0c14', border: '1px solid rgba(90,130,200,0.14)', borderRadius: 14, padding: '14px 14px 12px' },
+  playerRow:   { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 },
+  playerAvatar:{ width: 38, height: 38, borderRadius: 12, background: 'linear-gradient(135deg,#1e3a5f,#0e1f3a)', border: '1px solid rgba(91,163,217,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 800, color: '#5ba3d9', flexShrink: 0 },
+  playerInfo:  { display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 },
+  playerName:  { fontSize: '0.85rem', fontWeight: 700, color: '#c8dff5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  playerBal:   { fontSize: '0.70rem', color: '#4a6a90', fontFamily: 'monospace' },
+  playerBtns:  { display: 'flex', gap: 8 },
+  btnPlayerAction: { flex: 1, padding: '7px 6px', background: 'rgba(91,163,217,0.08)', color: '#5ba3d9', border: '1px solid rgba(91,163,217,0.22)', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: '0.70rem', textAlign: 'center', whiteSpace: 'nowrap' },
+
+  // ── Leaderboard card
+  lbCard:   { width: '100%', background: '#0a0c14', border: '1px solid rgba(90,130,200,0.14)', borderRadius: 14, overflow: 'hidden' },
+  lbHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px 10px', borderBottom: '1px solid rgba(90,130,200,0.08)' },
+  lbTitle:  { fontSize: '0.72rem', fontWeight: 800, color: '#c8dff5', letterSpacing: 2, textTransform: 'uppercase' },
+  lbPeriod: { fontSize: '0.60rem', color: '#2e4a66', letterSpacing: 1 },
+  lbList:   { display: 'flex', flexDirection: 'column' },
+  lbRow:    { display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderBottom: '1px solid rgba(90,130,200,0.05)' },
+  lbRowTop: { background: 'rgba(91,163,217,0.04)' },
+  lbRank:   { fontSize: '0.82rem', width: 24, flexShrink: 0, textAlign: 'center', color: '#4a6a90', fontWeight: 700 },
+  lbName:   { flex: 1, fontSize: '0.78rem', color: '#c8dff5', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  lbStats:  { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 },
+  lbProfit: { fontSize: '0.72rem', fontWeight: 700, color: '#3dcfb0' },
+  lbWins:   { fontSize: '0.60rem', color: '#2e4a66' },
 }
